@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jain Trading B2B – Collection Agent App</title>
+  <!-- Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Design System Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            jtc: {
+              blue: '#0D47A1',
+              blueHover: '#1565C0',
+              blueDark: '#08306B',
+              orange: '#FF9800',
+              orangeHover: '#FB8C00',
+              success: '#2E7D32',
+              error: '#D32F2F',
+              warning: '#F9A825',
+              info: '#0288D1',
+              sidebar: '#0E2344',
+              bgMain: '#F5F7FA',
+              bgSection: '#EEF3F8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media (max-width: 640px) {
+      .simulator-body {
+        background: #F5F7FA !important;
+        padding: 0 !important;
+      }
+      .phone-frame {
+        width: 100% !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      .phone-inner {
+        border-radius: 0 !important;
+      }
+      .phone-notch {
+        display: none !important;
+      }
+      .phone-status-bar {
+        display: none !important;
+      }
+      .phone-content {
+        padding-top: 16px !important;
+        padding-bottom: 75px !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-indigo-950 flex items-center justify-center min-h-screen p-4 simulator-body">
+
+  <!-- Android/Purple Frame Container -->
+  <div class="phone-frame border-indigo-950 shadow-indigo-900/40 shadow-2xl transition-all duration-300">
+    <div class="phone-inner agent-theme bg-slate-50">
+      <!-- Notch -->
+      <div class="phone-notch bg-indigo-950"></div>
+      
+      <!-- Android Status Bar -->
+      <div class="phone-status-bar text-slate-800" id="phone-status-bar-agt">
+        <span class="font-mono">14:05</span>
+        <div class="flex gap-1.5 items-center">
+          <span class="material-symbols-outlined text-[14px]">signal_cellular_4_bar</span>
+          <span class="material-symbols-outlined text-[14px]">wifi</span>
+          <span class="material-symbols-outlined text-[14px]">battery_50</span>
+        </div>
+      </div>
+      
+      <!-- App Screen Area -->
+      <div class="phone-screen-container">
+        <div class="phone-content custom-scrollbar" id="agent-screen-area">
+          <!-- Dynamically Rendered via app.js -->
+        </div>
+      </div>
+
+      <!-- App Bottom Tab Bar Navigation -->
+      <div class="absolute bottom-0 left-0 w-full h-[65px] bg-white border-t border-slate-100 flex justify-around items-center px-4 pb-2 z-50 shadow-lg" id="agent-bottom-nav" style="display: none;">
+        <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="home" onclick="navigateAgent('home')">
+          <span class="material-symbols-outlined text-xl">route</span>
+          <span class="text-[9px] mt-0.5 font-medium">Route Plan</span>
+        </button>
+        <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="leaderboard" onclick="navigateAgent('leaderboard')">
+          <span class="material-symbols-outlined text-xl">social_leaderboard</span>
+          <span class="text-[9px] mt-0.5 font-medium">Performance</span>
+        </button>
+        <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="history" onclick="navigateAgent('history')">
+          <span class="material-symbols-outlined text-xl">receipt_long</span>
+          <span class="text-[9px] mt-0.5 font-medium">History</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Absolute Global Elements -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3"></div>
+
+  <!-- Shared Controller Scripts -->
+  <script src="mockData.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Force active platform to agent for this view
+    state.activePlatform = 'agent';
+    setTimeout(() => {
+      renderAgentApp();
+    }, 50);
+  </script>
+</body>
+</html>
