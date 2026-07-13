@@ -35,9 +35,55 @@
         }
       }
     }
-  </script>
+  <style>
+    @media (max-width: 768px) {
+      body > header, body > main {
+        display: none !important;
+      }
+      #mobile-launcher {
+        display: flex !important;
+      }
+    }
+  </style>
 </head>
 <body class="bg-slate-100 flex flex-col min-h-screen">
+
+  <!-- Mobile Launcher Overlay -->
+  <div id="mobile-launcher" class="fixed inset-0 bg-slate-900 flex-col justify-between p-6 text-white hidden z-[99999]">
+    <div class="mt-8 flex flex-col items-center text-center">
+      <div class="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-4 shadow-lg">
+        <span class="material-symbols-outlined text-jtc-blue text-3xl font-bold">electric_bolt</span>
+      </div>
+      <h1 class="text-xl font-bold font-poppins">JAIN TRADING</h1>
+      <p class="text-blue-300 text-[10px] tracking-wider uppercase font-semibold">B2B Mobile Hub</p>
+    </div>
+
+    <div class="flex flex-col gap-4 my-auto w-full max-w-sm mx-auto">
+      <button class="w-full bg-white/10 hover:bg-white/15 border border-white/20 p-5 rounded-2xl flex items-center gap-4 text-left transition" onclick="window.location.href='app.html'">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+          <span class="material-symbols-outlined">store</span>
+        </div>
+        <div>
+          <strong class="text-sm font-poppins block">B2B Dealer / Customer</strong>
+          <span class="text-[10px] text-slate-400 block mt-0.5">Book bulk stock, check ledger dues, pay invoices</span>
+        </div>
+      </button>
+
+      <button class="w-full bg-white/10 hover:bg-white/15 border border-white/20 p-5 rounded-2xl flex items-center gap-4 text-left transition" onclick="window.location.href='agent.html'">
+        <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+          <span class="material-symbols-outlined">route</span>
+        </div>
+        <div>
+          <strong class="text-sm font-poppins block">Field Collection Agent</strong>
+          <span class="text-[10px] text-slate-400 block mt-0.5">Route mapping, log payments, print receipts</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="text-center text-[10px] text-slate-500 pb-4">
+      Jain Trading Corporation &copy; 2026. All rights reserved.
+    </div>
+  </div>
 
   <!-- Top Navigation Switcher -->
   <header class="bg-jtc-blueDark px-6 py-4 flex flex-col md:flex-row justify-between items-center border-b border-blue-900 shadow-md gap-4 z-50">
