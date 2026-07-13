@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jain Trading Corporation – Enterprise B2B Platform Hub</title>
+  <!-- Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Custom Design System Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Customize Tailwind config to map JTC theme tokens
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            jtc: {
+              blue: '#0D47A1',
+              blueHover: '#1565C0',
+              blueDark: '#08306B',
+              orange: '#FF9800',
+              orangeHover: '#FB8C00',
+              success: '#2E7D32',
+              error: '#D32F2F',
+              warning: '#F9A825',
+              info: '#0288D1',
+              sidebar: '#0E2344',
+              bgMain: '#F5F7FA',
+              bgSection: '#EEF3F8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 flex flex-col min-h-screen">
+
+  <!-- Top Navigation Switcher -->
+  <header class="bg-jtc-blueDark px-6 py-4 flex flex-col md:flex-row justify-between items-center border-b border-blue-900 shadow-md gap-4 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md">
+        <span class="material-symbols-outlined text-jtc-blue text-2xl font-bold">electric_bolt</span>
+      </div>
+      <div>
+        <h1 class="text-white text-lg font-bold font-poppins leading-none">JAIN TRADING</h1>
+        <p class="text-blue-300 text-[10px] tracking-wider uppercase font-semibold">Enterprise Platform Emulator</p>
+      </div>
+    </div>
+    
+    <!-- Switcher Tabs -->
+    <nav class="bg-blue-950 p-1 rounded-xl flex gap-1.5 shadow-inner">
+      <button class="platform-btn px-4 py-2 text-xs font-semibold text-white rounded-lg transition-all flex items-center gap-1.5 bg-white text-blue-900 shadow-sm" data-platform="admin">
+        <span class="material-symbols-outlined text-sm">desktop_windows</span> Admin Dashboard
+      </button>
+      <button class="platform-btn px-4 py-2 text-xs font-semibold text-white rounded-lg transition-all flex items-center gap-1.5" data-platform="customer">
+        <span class="material-symbols-outlined text-sm">phone_iphone</span> Customer Mobile App
+      </button>
+      <button class="platform-btn px-4 py-2 text-xs font-semibold text-white rounded-lg transition-all flex items-center gap-1.5" data-platform="agent">
+        <span class="material-symbols-outlined text-sm">route</span> Agent Mobile App
+      </button>
+      <button class="platform-btn px-4 py-2 text-xs font-semibold text-white rounded-lg transition-all flex items-center gap-1.5" data-platform="specs">
+        <span class="material-symbols-outlined text-sm">palette</span> Design System Specs
+      </button>
+    </nav>
+
+    <!-- Reset / Status indicator -->
+    <div class="flex items-center gap-3">
+      <button class="text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-lg border border-white/15 transition-all" onclick="Database.reset()">
+        <span class="material-symbols-outlined text-xs">restart_alt</span> Reset DB
+      </button>
+      <div class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> SAP Connected
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="flex-1 flex flex-col">
+
+    <!-- 1. ADMIN WEB PORTAL CONTAINER -->
+    <div id="admin-container" class="flex-1 flex h-full" style="display: flex;">
+      <!-- Sidebar Navigation -->
+      <aside class="w-64 bg-jtc-sidebar text-slate-300 flex flex-col justify-between flex-shrink-0 z-10 shadow-lg">
+        <div class="py-6 flex flex-col gap-1.5">
+          <div class="px-6 mb-6">
+            <span class="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Operational Console</span>
+            <div class="text-white text-sm font-semibold font-poppins mt-1 flex items-center gap-1">Admin Panel <span class="text-[9px] bg-blue-800 text-blue-200 px-1.5 py-0.5 rounded font-mono font-bold ml-1">v2.0</span></div>
+          </div>
+          
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('dashboard')" data-tab="dashboard">
+            <span class="material-symbols-outlined text-base">dashboard</span> Dashboard (Home)
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('customers')" data-tab="customers">
+            <span class="material-symbols-outlined text-base">storefront</span> Customers (Dealers)
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('orders')" data-tab="orders">
+            <span class="material-symbols-outlined text-base">receipt_long</span> Orders Bookings
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('products')" data-tab="products">
+            <span class="material-symbols-outlined text-base">inventory</span> Products & Inventory
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('invoices')" data-tab="invoices">
+            <span class="material-symbols-outlined text-base">description</span> Invoices Ledger
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('agents')" data-tab="agents">
+            <span class="material-symbols-outlined text-base">support_agent</span> Collection Agents
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('collections')" data-tab="collections">
+            <span class="material-symbols-outlined text-base">payments</span> Collections Log
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('erp-sync')" data-tab="erp-sync">
+            <span class="material-symbols-outlined text-base">sync</span> ERP Sync Center
+          </button>
+        </div>
+
+        <div class="p-6 border-t border-slate-800 text-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white shadow-inner">AD</div>
+            <div>
+              <div class="font-bold text-slate-200">Admin User</div>
+              <div class="text-slate-500 font-mono text-[10px]">admin@jtc.com</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Workspace Area -->
+      <div class="flex-1 bg-jtc-bgMain p-8 overflow-y-auto custom-scrollbar relative">
+        
+        <!-- Tab 1: Dashboard Home -->
+        <div id="admin-pane-dashboard" class="admin-tab-pane animate-fade-in" style="display: block;">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold font-poppins text-slate-800">Operational Dashboard</h2>
+              <p class="text-xs text-slate-500 mt-1">Real-time metrics, ERP sync status, and collection performance metrics</p>
+            </div>
+            <div class="text-xs text-slate-500 bg-white px-4 py-2 border border-slate-200 rounded-xl shadow-sm font-semibold">
+              Today: 13 May 2024
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="jtc-card bg-white relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Total Sales (Confirmed)</span>
+                <strong class="text-2xl font-mono text-slate-800 block mt-2" id="stat-sales">₹0</strong>
+              </div>
+              <div class="text-xs text-emerald-600 font-bold mt-4 flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span> +18.7% <span class="text-slate-400 font-normal">vs last week</span></div>
+            </div>
+
+            <div class="jtc-card bg-white relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Active B2B Orders</span>
+                <strong class="text-2xl font-mono text-slate-800 block mt-2" id="stat-orders">0</strong>
+              </div>
+              <div class="text-xs text-emerald-600 font-bold mt-4 flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span> +12.5% <span class="text-slate-400 font-normal">vs last week</span></div>
+            </div>
+
+            <div class="jtc-card bg-white relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Total Active Dealers</span>
+                <strong class="text-2xl font-mono text-slate-800 block mt-2" id="stat-customers">0</strong>
+              </div>
+              <div class="text-xs text-emerald-600 font-bold mt-4 flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_up</span> +9.4% <span class="text-slate-400 font-normal">vs last week</span></div>
+            </div>
+
+            <div class="jtc-card bg-white relative overflow-hidden flex flex-col justify-between">
+              <div>
+                <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Outstanding Ledger</span>
+                <strong class="text-2xl font-mono text-slate-800 block mt-2" id="stat-outstanding">₹0</strong>
+              </div>
+              <div class="text-xs text-rose-600 font-bold mt-4 flex items-center gap-1"><span class="material-symbols-outlined text-sm">trending_down</span> -4.3% <span class="text-slate-400 font-normal">vs last month</span></div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="jtc-card bg-white lg:col-span-2 h-[350px] flex flex-col">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Sales Overview</h3>
+              <div class="flex-1 relative">
+                <canvas id="salesOverviewChart"></canvas>
+              </div>
+            </div>
+
+            <div class="jtc-card bg-white h-[350px] flex flex-col">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Top Categories</h3>
+              <div class="flex-1 relative">
+                <canvas id="topCategoriesChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="p-5 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center gap-4">
+              <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><span class="material-symbols-outlined">pending_actions</span></div>
+              <div>
+                <span class="text-xs text-slate-400 block font-bold uppercase tracking-wider">Pending Orders</span>
+                <strong class="text-xl font-mono text-slate-700" id="stat-pending-orders">0</strong>
+              </div>
+            </div>
+            <div class="p-5 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center gap-4">
+              <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center"><span class="material-symbols-outlined">receipt</span></div>
+              <div>
+                <span class="text-xs text-slate-400 block font-bold uppercase tracking-wider">Pending Invoices</span>
+                <strong class="text-xl font-mono text-slate-700" id="stat-pending-invoices">0</strong>
+              </div>
+            </div>
+            <div class="p-5 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center gap-4">
+              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><span class="material-symbols-outlined">request_quote</span></div>
+              <div>
+                <span class="text-xs text-slate-400 block font-bold uppercase tracking-wider">Collections Due</span>
+                <strong class="text-xl font-mono text-slate-700" id="stat-collections-due">₹0</strong>
+              </div>
+            </div>
+            <div class="p-5 bg-white border border-slate-100 shadow-sm rounded-2xl flex items-center gap-4">
+              <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center"><span class="material-symbols-outlined">badge</span></div>
+              <div>
+                <span class="text-xs text-slate-400 block font-bold uppercase tracking-wider">Active Agents</span>
+                <strong class="text-xl font-mono text-slate-700" id="stat-active-agents">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Customers Grid -->
+        <div id="admin-pane-customers" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Registered B2B Customers</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Customer / Dealer Name</th>
+                    <th>Phone No</th>
+                    <th>Email Address</th>
+                    <th>City Hub</th>
+                    <th class="text-right">Outstanding Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-customers-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Orders Lifecyle -->
+        <div id="admin-pane-orders" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">B2B Sales Orders Ledger</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Order Date</th>
+                    <th>Total Amount</th>
+                    <th>Booking Status</th>
+                    <th>Payment State</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-orders-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Products Inventory -->
+        <div id="admin-pane-products" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Stock Inventory Control</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Brand</th>
+                    <th>SKU ID</th>
+                    <th>Price</th>
+                    <th class="text-center">Stock Level</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-products-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Invoices List -->
+        <div id="admin-pane-invoices" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Generated B2B Invoices</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Order ID</th>
+                    <th>Customer Dealer</th>
+                    <th>Billing Date</th>
+                    <th>Invoice Amount</th>
+                    <th>Status</th>
+                    <th>Invoice PDF</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-invoices-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 6: Collection Agents -->
+        <div id="admin-pane-agents" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Collection Agents Roster</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Agent Name</th>
+                    <th>Phone</th>
+                    <th>Assigned Area</th>
+                    <th class="text-right font-medium">Pending Dues Assigned</th>
+                    <th class="text-right font-medium">Total Collected Dues</th>
+                    <th>Target Compliance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-agents-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 7: Collections Log -->
+        <div id="admin-pane-collections" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Field Collection Receipts</h2>
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Receipt ID</th>
+                    <th>Collection Agent</th>
+                    <th>Dealer Firm</th>
+                    <th>Receipt Value</th>
+                    <th>Receipt Date</th>
+                    <th>Payment Mode</th>
+                    <th>Instrument Details</th>
+                    <th>Verification</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-collections-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 8: ERP Sync Center -->
+        <div id="admin-pane-erp-sync" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold font-poppins text-slate-800">ERP Ledger Integration Center</h2>
+              <p class="text-xs text-slate-500 mt-1">Automatic sync schedule with SAP, Zoho, and Oracle ledgers</p>
+            </div>
+            <button id="btn-manual-sync" class="btn-primary flex items-center gap-2 h-12" onclick="triggerManualERPSync()">
+              <span class="material-symbols-outlined text-sm">sync</span> Sync Now
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="jtc-card bg-white md:col-span-2 flex flex-col justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">ERP Sync Status</h3>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-100 pb-4 mb-4 text-center">
+                  <div class="p-3 bg-slate-50 rounded-xl">
+                    <span class="text-[9px] text-slate-400 font-bold block uppercase">SAP ERP</span>
+                    <span class="text-xs text-emerald-600 font-semibold block mt-1">Connected</span>
+                    <span class="text-[9px] text-slate-400 block mt-1 font-mono">Last sync: 2m ago</span>
+                  </div>
+                  <div class="p-3 bg-slate-50 rounded-xl">
+                    <span class="text-[9px] text-slate-400 font-bold block uppercase">ZOHO INVENTORY</span>
+                    <span class="text-xs text-emerald-600 font-semibold block mt-1">Connected</span>
+                    <span class="text-[9px] text-slate-400 block mt-1 font-mono">Last sync: 5m ago</span>
+                  </div>
+                  <div class="p-3 bg-slate-50 rounded-xl">
+                    <span class="text-[9px] text-slate-400 font-bold block uppercase">MS DYNAMICS</span>
+                    <span class="text-xs text-emerald-600 font-semibold block mt-1">Connected</span>
+                    <span class="text-[9px] text-slate-400 block mt-1 font-mono">Last sync: 12m ago</span>
+                  </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">The system automatically pushes B2B customer bookings and field collection receipts to SAP S/4HANA ledgers in real-time. Inventory levels sync from Zoho every 10 minutes.</p>
+              </div>
+            </div>
+
+            <div class="jtc-card bg-white flex flex-col">
+              <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">ERP Integration Logs</h3>
+              <div class="flex-1 overflow-y-auto max-h-[220px] custom-scrollbar" id="erp-sync-logs-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overlays/Modals inside Admin Portal -->
+        <!-- Order Detail Slideout Overlay -->
+        <div id="admin-order-detail-panel" class="absolute top-0 right-0 h-full w-96 bg-white border-l border-slate-200 shadow-2xl z-40 p-6 flex flex-col justify-between hidden animate-fade-in">
+          <div>
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-bold font-poppins text-slate-800">Booking Details</h3>
+              <button class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-700" onclick="closeOrderDetailsAdmin()">
+                <span class="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+
+            <div class="flex flex-col gap-4">
+              <div class="flex justify-between text-sm">
+                <span class="text-slate-400">Order ID:</span>
+                <strong class="font-mono text-slate-700" id="admin-detail-order-id">-</strong>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-slate-400">Dealer Firm:</span>
+                <strong class="text-slate-700" id="admin-detail-cust">-</strong>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-slate-400">Booking Date:</span>
+                <strong class="text-slate-700 font-mono" id="admin-detail-date">-</strong>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-slate-400">Booking Remarks:</span>
+                <strong class="text-slate-700" id="admin-detail-remarks">-</strong>
+              </div>
+
+              <div class="border-t border-slate-100 pt-4">
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Order Items</h4>
+                <div id="admin-detail-items" class="flex flex-col gap-2"></div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-4">
+                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Progress History</h4>
+                <div id="admin-detail-timeline" class="flex flex-col gap-1"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-4 flex flex-col gap-2">
+            <div class="flex justify-between items-center text-slate-800 font-bold mb-2">
+              <span>Total Price:</span>
+              <span class="font-mono text-blue-900" id="admin-detail-total">₹0</span>
+            </div>
+            <button class="btn-primary w-full text-xs font-semibold h-11" onclick="closeOrderDetailsAdmin()">Close Panel</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. CUSTOMER MOBILE APP CONTAINER -->
+    <div id="customer-container" class="flex-1 flex items-center justify-center p-6 h-full bg-slate-50" style="display: none;">
+      <!-- Main Phone Simulator Frame -->
+      <div class="phone-frame shadow-2xl">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          
+          <!-- Phone Status Bar -->
+          <div class="phone-status-bar" id="phone-status-bar-cust">
+            <span class="font-mono">09:41</span>
+            <div class="flex gap-1.5 items-center">
+              <span class="material-symbols-outlined text-[14px]">signal_cellular_4_bar</span>
+              <span class="material-symbols-outlined text-[14px]">wifi</span>
+              <span class="material-symbols-outlined text-[14px]">battery_very_low</span>
+            </div>
+          </div>
+          
+          <!-- Screen content container -->
+          <div class="phone-screen-container">
+            <div class="phone-content custom-scrollbar" id="customer-screen-area">
+              <!-- Rendered Dynamically via app.js -->
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Bar inside the screen (only visible when authenticated) -->
+          <div class="absolute bottom-0 left-0 w-full h-[65px] bg-white border-t border-slate-100 flex justify-around items-center px-4 pb-2 z-50 shadow-lg" id="customer-bottom-nav" style="display: none;">
+            <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="home" onclick="navigateCustomer('home')">
+              <span class="material-symbols-outlined text-xl">home</span>
+              <span class="text-[9px] mt-0.5">Home</span>
+            </button>
+            <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="brands" onclick="navigateCustomer('categories')">
+              <span class="material-symbols-outlined text-xl">grid_view</span>
+              <span class="text-[9px] mt-0.5">Categories</span>
+            </button>
+            <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="orders" onclick="navigateCustomer('dispatch')">
+              <span class="material-symbols-outlined text-xl">local_shipping</span>
+              <span class="text-[9px] mt-0.5">Timeline</span>
+            </button>
+            <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="invoices" onclick="navigateCustomer('invoices')">
+              <span class="material-symbols-outlined text-xl">receipt_long</span>
+              <span class="text-[9px] mt-0.5">Billing</span>
+            </button>
+            <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="profile" onclick="navigateCustomer('profile')">
+              <span class="material-symbols-outlined text-xl">person</span>
+              <span class="text-[9px] mt-0.5">Profile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. COLLECTION AGENT MOBILE APP CONTAINER -->
+    <div id="agent-container" class="flex-1 flex items-center justify-center p-6 h-full bg-slate-50" style="display: none;">
+      <!-- Agent phone frame utilizing violet-indigo colors -->
+      <div class="phone-frame border-indigo-950 shadow-indigo-100 shadow-2xl">
+        <div class="phone-inner agent-theme bg-slate-50">
+          <div class="phone-notch bg-indigo-950"></div>
+
+          <!-- Phone Status Bar -->
+          <div class="phone-status-bar" id="phone-status-bar-agt">
+            <span class="font-mono">14:05</span>
+            <div class="flex gap-1.5 items-center">
+              <span class="material-symbols-outlined text-[14px]">signal_cellular_4_bar</span>
+              <span class="material-symbols-outlined text-[14px]">wifi</span>
+              <span class="material-symbols-outlined text-[14px]">battery_50</span>
+            </div>
+          </div>
+
+          <!-- Screen content container -->
+          <div class="phone-screen-container">
+            <div class="phone-content custom-scrollbar" id="agent-screen-area">
+              <!-- Rendered Dynamically via app.js -->
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Bar inside the screen (only visible when authenticated) -->
+          <div class="absolute bottom-0 left-0 w-full h-[65px] bg-white border-t border-slate-100 flex justify-around items-center px-4 pb-2 z-50 shadow-lg" id="agent-bottom-nav" style="display: none;">
+            <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="home" onclick="navigateAgent('home')">
+              <span class="material-symbols-outlined text-xl">route</span>
+              <span class="text-[9px] mt-0.5">Route Plan</span>
+            </button>
+            <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="leaderboard" onclick="navigateAgent('leaderboard')">
+              <span class="material-symbols-outlined text-xl">social_leaderboard</span>
+              <span class="text-[9px] mt-0.5">Performance</span>
+            </button>
+            <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="history" onclick="navigateAgent('history')">
+              <span class="material-symbols-outlined text-xl">receipt_long</span>
+              <span class="text-[9px] mt-0.5">History</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DESIGN SYSTEM SPEC SHEET CONTAINER -->
+    <div id="specs-container" class="max-w-6xl w-full mx-auto p-10 bg-white shadow-xl rounded-3xl my-8 overflow-y-auto" style="display: none;">
+      <h2 class="text-3xl font-bold font-poppins text-slate-800 mb-2">Jain Trading Corporation</h2>
+      <p class="text-slate-500 mb-8">Brand Guidelines & Design Tokens spec sheet for UI/UX Developers</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <!-- Colors Section -->
+        <div>
+          <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">Brand Color Tokens</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-jtc-blue rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Primary Blue</span>
+                <span class="text-xs text-slate-400 font-mono">#0D47A1</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-jtc-blueHover rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Primary Hover</span>
+                <span class="text-xs text-slate-400 font-mono">#1565C0</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-jtc-blueDark rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Primary Dark</span>
+                <span class="text-xs text-slate-400 font-mono">#08306B</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-jtc-orange rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Accent Orange</span>
+                <span class="text-xs text-slate-400 font-mono">#FF9800</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-jtc-sidebar rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Sidebar Navy</span>
+                <span class="text-xs text-slate-400 font-mono">#0E2344</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-emerald-700 rounded-xl shadow-md border border-slate-100"></div>
+              <div>
+                <span class="text-xs font-bold text-slate-700 block">Success Green</span>
+                <span class="text-xs text-slate-400 font-mono">#2E7D32</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography Section -->
+        <div>
+          <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">Typography Scale</h3>
+          <div class="flex flex-col gap-4">
+            <div>
+              <span class="text-xs text-slate-400 block font-mono">Heading 1 (Poppins Bold - 34px)</span>
+              <h1 class="text-slate-800 text-[34px] font-bold">Jain Trading Corp</h1>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-mono">Heading 3 (Poppins SemiBold - 22px)</span>
+              <h3 class="text-slate-800 text-[22px] font-semibold">Distribution & Collections</h3>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-mono">Body Normal (Inter - 16px)</span>
+              <p class="text-slate-600 text-[16px] leading-relaxed">Enterprise platform connected with SAP ERP database in real-time.</p>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-mono">Numbers (Roboto Mono - 16px)</span>
+              <span class="text-slate-800 font-mono text-[16px] font-bold">₹1,24,560.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Components -->
+        <div>
+          <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">B2B Action Buttons</h3>
+          <div class="flex flex-wrap gap-4">
+            <button class="btn-primary h-12 text-sm">Primary B2B Action</button>
+            <button class="btn-secondary h-12 text-sm">Secondary Action</button>
+            <button class="btn-danger h-12 text-sm">Cancel Booking</button>
+          </div>
+        </div>
+
+        <!-- System Status Chips -->
+        <div>
+          <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-3 mb-4 uppercase tracking-wider">Order Status Badges</h3>
+          <div class="flex flex-wrap gap-3">
+            <span class="status-chip status-pending">Pending</span>
+            <span class="status-chip status-confirmed">Confirmed</span>
+            <span class="status-chip status-packed">Packed</span>
+            <span class="status-chip status-dispatched">Dispatched</span>
+            <span class="status-chip status-delivered">Delivered</span>
+            <span class="status-chip status-cancelled">Cancelled</span>
+            <span class="status-chip status-paid">Paid</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Absolute Global Elements -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3"></div>
+
+  <!-- Shared Controller Scripts -->
+  <script src="mockData.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
