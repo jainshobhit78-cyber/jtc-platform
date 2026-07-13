@@ -1,15 +1,18 @@
 # Jain Trading Corporation - Enterprise B2B Platform
 
-**Live Demo Preview**: [https://jainshobhit78-cyber.github.io/jtc-platform/](https://jainshobhit78-cyber.github.io/jtc-platform/)
+Unified B2B enterprise platform prototype and design system emulator for **Jain Trading Corporation**. The platform allows cross-device simulations between B2B dealer operations, field collection actions, and administrative oversight.
 
-A unified B2B platform prototype and interactive design system emulator for **Jain Trading Corporation**. The platform allows cross-device simulations between B2B dealer operations, field collections, and administrative dashboard panels.
+## Live Demo Previews
+You can test each portal directly in your browser:
+- 🖥️ **[Admin Dashboard Panel](https://jainshobhit78-cyber.github.io/jtc-platform/)**
+- 📱 **[Customer Mobile App Simulator](https://jainshobhit78-cyber.github.io/jtc-platform/app.html)**
+- 🏃‍♂️ **[Collection Agent App Simulator](https://jainshobhit78-cyber.github.io/jtc-platform/agent.html)**
+
+*Mobile Viewports: Open the Customer or Agent links on a real mobile device or in Chrome Device Emulator to run them in full-screen mobile mode without the desktop device bezels.*
 
 ## Project Structure
-- **`index.html`**: Master interface hosting the Admin Dashboard, Customer Mobile App (iPhone Frame), Collection Agent App (Android Frame), and the Design Specs.
-- **`styles.css`**: Strict JTC brand design tokens (colors, radii, cards, tables, states, and custom transitions).
-- **`app.js`**: Simulation logic (ordering, ledger verification, payments, tickets, and charts updates).
-- **`mockData.js`**: Shared persistent LocalStorage databases (products, dealers, agents, logs, invoices).
-
-## Quick Start
-1. Live Link: Open [https://jainshobhit78-cyber.github.io/jtc-platform/](https://jainshobhit78-cyber.github.io/jtc-platform/)
-2. Local: Open **`index.html`** on your Desktop.
+- **`index.html`**: Unified control center combining all views and design systems specs.
+- **`app.html`**: Dedicated standalone page for the Customer Mobile App.
+- **`agent.html`**: Dedicated standalone page for the Collection Agent Mobile App.
+- **`styles.css`**: Design tokens styling sheets (colors, shadows, curves, transitions).
+- **`app.js` / `mockData.js`**: State syncing controller and local persistent database.
