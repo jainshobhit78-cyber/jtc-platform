@@ -126,22 +126,29 @@ function switchPlatform(platform) {
 }
 
 function renderCurrentPlatform() {
-  document.getElementById('admin-container').style.display = 'none';
-  document.getElementById('customer-container').style.display = 'none';
-  document.getElementById('agent-container').style.display = 'none';
-  document.getElementById('specs-container').style.display = 'none';
+  const adminCont = document.getElementById('admin-container');
+  const custCont = document.getElementById('customer-container');
+  const agtCont = document.getElementById('agent-container');
+  const specsCont = document.getElementById('specs-container');
+
+  if (adminCont) adminCont.style.display = 'none';
+  if (custCont) custCont.style.display = 'none';
+  if (agtCont) agtCont.style.display = 'none';
+  if (specsCont) specsCont.style.display = 'none';
 
   if (state.activePlatform === 'admin') {
-    document.getElementById('admin-container').style.display = 'flex';
-    renderAdminDashboard();
+    if (adminCont) {
+      adminCont.style.display = 'flex';
+      renderAdminDashboard();
+    }
   } else if (state.activePlatform === 'customer') {
-    document.getElementById('customer-container').style.display = 'flex';
+    if (custCont) custCont.style.display = 'flex';
     renderCustomerApp();
   } else if (state.activePlatform === 'agent') {
-    document.getElementById('agent-container').style.display = 'flex';
+    if (agtCont) agtCont.style.display = 'flex';
     renderAgentApp();
   } else if (state.activePlatform === 'specs') {
-    document.getElementById('specs-container').style.display = 'block';
+    if (specsCont) specsCont.style.display = 'block';
   }
 }
 
@@ -252,6 +259,11 @@ function populateAdminDashboardHome() {
 
 let salesChart, categoryChart;
 function initDashboardCharts() {
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js is not loaded. Skipping dashboard chart initialization.");
+    return;
+  }
+
   const salesCtx = document.getElementById('salesOverviewChart');
   const catCtx = document.getElementById('topCategoriesChart');
 

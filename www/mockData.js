@@ -634,39 +634,73 @@ const adminUsers = [
 
 // Helper functions for state updates
 const Database = {
-  getProducts: () => JSON.parse(localStorage.getItem('jtc_products')) || initialProducts,
-  saveProducts: (data) => localStorage.setItem('jtc_products', JSON.stringify(data)),
+  getProducts: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_products')) || initialProducts; } catch(e) { return initialProducts; }
+  },
+  saveProducts: (data) => {
+    try { localStorage.setItem('jtc_products', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getCustomers: () => JSON.parse(localStorage.getItem('jtc_customers')) || initialCustomers,
-  saveCustomers: (data) => localStorage.setItem('jtc_customers', JSON.stringify(data)),
+  getCustomers: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_customers')) || initialCustomers; } catch(e) { return initialCustomers; }
+  },
+  saveCustomers: (data) => {
+    try { localStorage.setItem('jtc_customers', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getOrders: () => JSON.parse(localStorage.getItem('jtc_orders')) || initialOrders,
-  saveOrders: (data) => localStorage.setItem('jtc_orders', JSON.stringify(data)),
+  getOrders: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_orders')) || initialOrders; } catch(e) { return initialOrders; }
+  },
+  saveOrders: (data) => {
+    try { localStorage.setItem('jtc_orders', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getInvoices: () => JSON.parse(localStorage.getItem('jtc_invoices')) || initialInvoices,
-  saveInvoices: (data) => localStorage.setItem('jtc_invoices', JSON.stringify(data)),
+  getInvoices: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_invoices')) || initialInvoices; } catch(e) { return initialInvoices; }
+  },
+  saveInvoices: (data) => {
+    try { localStorage.setItem('jtc_invoices', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getAgents: () => JSON.parse(localStorage.getItem('jtc_agents')) || initialAgents,
-  saveAgents: (data) => localStorage.setItem('jtc_agents', JSON.stringify(data)),
+  getAgents: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_agents')) || initialAgents; } catch(e) { return initialAgents; }
+  },
+  saveAgents: (data) => {
+    try { localStorage.setItem('jtc_agents', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getCollections: () => JSON.parse(localStorage.getItem('jtc_collections')) || initialCollections,
-  saveCollections: (data) => localStorage.setItem('jtc_collections', JSON.stringify(data)),
+  getCollections: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_collections')) || initialCollections; } catch(e) { return initialCollections; }
+  },
+  saveCollections: (data) => {
+    try { localStorage.setItem('jtc_collections', JSON.stringify(data)); } catch(e) {}
+  },
   
-  getSyncLogs: () => JSON.parse(localStorage.getItem('jtc_synclogs')) || erpSyncLogs,
-  saveSyncLogs: (data) => localStorage.setItem('jtc_synclogs', JSON.stringify(data)),
+  getSyncLogs: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_synclogs')) || erpSyncLogs; } catch(e) { return erpSyncLogs; }
+  },
+  saveSyncLogs: (data) => {
+    try { localStorage.setItem('jtc_synclogs', JSON.stringify(data)); } catch(e) {}
+  },
 
-  getAdminUsers: () => JSON.parse(localStorage.getItem('jtc_adminusers')) || adminUsers,
-  saveAdminUsers: (data) => localStorage.setItem('jtc_adminusers', JSON.stringify(data)),
+  getAdminUsers: () => {
+    try { return JSON.parse(localStorage.getItem('jtc_adminusers')) || adminUsers; } catch(e) { return adminUsers; }
+  },
+  saveAdminUsers: (data) => {
+    try { localStorage.setItem('jtc_adminusers', JSON.stringify(data)); } catch(e) {}
+  },
 
   reset: () => {
-    localStorage.removeItem('jtc_products');
-    localStorage.removeItem('jtc_customers');
-    localStorage.removeItem('jtc_orders');
-    localStorage.removeItem('jtc_invoices');
-    localStorage.removeItem('jtc_agents');
-    localStorage.removeItem('jtc_collections');
-    localStorage.removeItem('jtc_synclogs');
-    localStorage.removeItem('jtc_adminusers');
+    try {
+      localStorage.removeItem('jtc_products');
+      localStorage.removeItem('jtc_customers');
+      localStorage.removeItem('jtc_orders');
+      localStorage.removeItem('jtc_invoices');
+      localStorage.removeItem('jtc_agents');
+      localStorage.removeItem('jtc_collections');
+      localStorage.removeItem('jtc_synclogs');
+      localStorage.removeItem('jtc_adminusers');
+    } catch(e) {}
     window.location.reload();
   }
 };
