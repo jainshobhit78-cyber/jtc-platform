@@ -1,6 +1,7 @@
-// JTC Enterprise B2B Platform Mock Database
+// JTC Enterprise B2B Platform - Expanded Mock Database
 
 const initialProducts = [
+  // 1. Wires & Cables
   {
     id: "PROD001",
     name: "KEI FR PVC Copper Wire 1.5 Sqmm - Blue (90m)",
@@ -53,6 +54,7 @@ const initialProducts = [
     specs: "Grounding wire, Lead-Free PVC, Eco-friendly",
     minOrder: 10
   },
+  // 2. Fans
   {
     id: "PROD005",
     name: "Crompton 1200mm Ceiling Fan - Brown",
@@ -79,6 +81,7 @@ const initialProducts = [
     specs: "High air delivery, Silent operation, Decorative trim",
     minOrder: 2
   },
+  // 3. Pumps
   {
     id: "PROD007",
     name: "Kirloskar 1HP Monoblock Pump - KDS-112",
@@ -105,6 +108,7 @@ const initialProducts = [
     specs: "Self-priming, Brass impeller, Thermal overload protection",
     minOrder: 1
   },
+  // 4. Solar Solutions
   {
     id: "PROD009",
     name: "UTL 330W Solar Panel - Polycrystalline",
@@ -131,6 +135,35 @@ const initialProducts = [
     specs: "Tubular Plate design, Long backup time, Low maintenance",
     minOrder: 1
   },
+  // 5. Lighting
+  {
+    id: "PROD013",
+    name: "Havells 9W LED Bulb - Cool Daylight",
+    category: "Lighting",
+    brand: "Havells",
+    sku: "HAV-LED9",
+    price: 95.00,
+    stock: 500,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1550985616-10810253b84d?w=300&auto=format&fit=crop&q=60",
+    specs: "Energy Saver LED Bulbs, B22 Base, 2 Years Warranty",
+    minOrder: 50
+  },
+  // 6. Motors
+  {
+    id: "PROD014",
+    name: "ABB 3-Phase Induction Motor 5HP",
+    category: "Motors",
+    brand: "ABB",
+    sku: "ABB-MOT5",
+    price: 18450.00,
+    stock: 35,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=60",
+    specs: "Industrial Grade, Cast Iron Frame, IP55 Protection",
+    minOrder: 1
+  },
+  // 7. Electrical
   {
     id: "PROD011",
     name: "Havells MCB 16A Single Pole - C Curve",
@@ -144,6 +177,21 @@ const initialProducts = [
     specs: "Short circuit breaking capacity 10kA, Finger-proof terminals",
     minOrder: 10
   },
+  // 8. Industrial Products
+  {
+    id: "PROD015",
+    name: "L&T Heavy Duty Contactor AC3 32A",
+    category: "Industrial Products",
+    brand: "L&T",
+    sku: "LT-CONT32",
+    price: 2450.00,
+    stock: 65,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=60",
+    specs: "3-Pole, auxiliary contacts, robust coil design",
+    minOrder: 2
+  },
+  // 9. Switchgears
   {
     id: "PROD012",
     name: "L&T Switchgears 3 Pole Contactor - 9A",
@@ -156,6 +204,48 @@ const initialProducts = [
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=60",
     specs: "AC-3 Duty rating, High electrical lifecycle, Compact design",
     minOrder: 2
+  },
+  // 10. Modular & Accessories
+  {
+    id: "PROD016",
+    name: "Anchor Roma 6A 1-Way Modular Switch",
+    category: "Modular & Accessories",
+    brand: "Anchor",
+    sku: "ANC-ROM6",
+    price: 35.00,
+    stock: 1200,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=60",
+    specs: "Smooth silent operations, fire retardant polycarbonate",
+    minOrder: 100
+  },
+  // 11. Cable Management
+  {
+    id: "PROD017",
+    name: "Precision PVC Conduit Pipe 25mm (3m)",
+    category: "Cable Management",
+    brand: "Precision",
+    sku: "PREC-CP25",
+    price: 65.00,
+    stock: 800,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=60",
+    specs: "Heavy mechanical stress resistance, non-flammable PVC",
+    minOrder: 50
+  },
+  // 12. Generators
+  {
+    id: "PROD018",
+    name: "Kirloskar Silent Diesel Generator 5kVA",
+    category: "Generators",
+    brand: "Kirloskar",
+    sku: "KIR-GEN5",
+    price: 135000.00,
+    stock: 8,
+    unit: "Piece",
+    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=60",
+    specs: "Liquid-cooled, soundproof enclosure, automatic transfer switch",
+    minOrder: 1
   }
 ];
 
@@ -534,6 +624,14 @@ const erpSyncLogs = [
   { time: "1 Day Ago", event: "Auto Sync Trigger", type: "Warning", details: "Oracle ERP sync connection timeout, retrying... Connected." }
 ];
 
+const adminUsers = [
+  { name: "Admin User", email: "admin@jtc.com", role: "Super Admin", status: "Active", lastLogin: "19 May 2024, 10:30 AM" },
+  { name: "Manager User", email: "manager@jtc.com", role: "Manager", status: "Active", lastLogin: "19 May 2024, 09:15 AM" },
+  { name: "Sales User", email: "sales@jtc.com", role: "Sales Executive", status: "Active", lastLogin: "18 May 2024, 08:45 AM" },
+  { name: "Accounts User", email: "accounts@jtc.com", role: "Accounts", status: "Active", lastLogin: "18 May 2024, 04:20 PM" },
+  { name: "Store User", email: "store@jtc.com", role: "Store Manager", status: "Inactive", lastLogin: "17 May 2024, 04:10 PM" }
+];
+
 // Helper functions for state updates
 const Database = {
   getProducts: () => JSON.parse(localStorage.getItem('jtc_products')) || initialProducts,
@@ -557,6 +655,9 @@ const Database = {
   getSyncLogs: () => JSON.parse(localStorage.getItem('jtc_synclogs')) || erpSyncLogs,
   saveSyncLogs: (data) => localStorage.setItem('jtc_synclogs', JSON.stringify(data)),
 
+  getAdminUsers: () => JSON.parse(localStorage.getItem('jtc_adminusers')) || adminUsers,
+  saveAdminUsers: (data) => localStorage.setItem('jtc_adminusers', JSON.stringify(data)),
+
   reset: () => {
     localStorage.removeItem('jtc_products');
     localStorage.removeItem('jtc_customers');
@@ -565,6 +666,7 @@ const Database = {
     localStorage.removeItem('jtc_agents');
     localStorage.removeItem('jtc_collections');
     localStorage.removeItem('jtc_synclogs');
+    localStorage.removeItem('jtc_adminusers');
     window.location.reload();
   }
 };

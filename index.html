@@ -13,7 +13,6 @@
   <!-- Custom Design System Stylesheet -->
   <link rel="stylesheet" href="styles.css">
   <script>
-    // Customize Tailwind config to map JTC theme tokens
     tailwind.config = {
       theme: {
         extend: {
@@ -115,6 +114,9 @@
           </button>
           <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('erp-sync')" data-tab="erp-sync">
             <span class="material-symbols-outlined text-base">sync</span> ERP Sync Center
+          </button>
+          <button class="admin-menu-item flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-all w-full text-left" onclick="switchAdminTab('settings')" data-tab="settings">
+            <span class="material-symbols-outlined text-base">settings</span> Settings & Users
           </button>
         </div>
 
@@ -231,7 +233,12 @@
 
         <!-- Tab 2: Customers Grid -->
         <div id="admin-pane-customers" class="admin-tab-pane animate-fade-in" style="display: none;">
-          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Registered B2B Customers</h2>
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold font-poppins text-slate-800">Registered B2B Customers</h2>
+            <button class="btn-primary flex items-center gap-2 h-11 px-4 text-xs font-semibold shadow-sm" onclick="openAddModal('customer')">
+              <span class="material-symbols-outlined text-sm">person_add</span> Add Dealer
+            </button>
+          </div>
           <div class="jtc-card bg-white">
             <div class="jtc-table-container">
               <table class="jtc-table">
@@ -277,7 +284,12 @@
 
         <!-- Tab 4: Products Inventory -->
         <div id="admin-pane-products" class="admin-tab-pane animate-fade-in" style="display: none;">
-          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Stock Inventory Control</h2>
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold font-poppins text-slate-800">Stock Inventory Control</h2>
+            <button class="btn-primary flex items-center gap-2 h-11 px-4 text-xs font-semibold shadow-sm" onclick="openAddModal('product')">
+              <span class="material-symbols-outlined text-sm">add</span> Add Product
+            </button>
+          </div>
           <div class="jtc-card bg-white">
             <div class="jtc-table-container">
               <table class="jtc-table">
@@ -323,7 +335,12 @@
 
         <!-- Tab 6: Collection Agents -->
         <div id="admin-pane-agents" class="admin-tab-pane animate-fade-in" style="display: none;">
-          <h2 class="text-2xl font-bold font-poppins text-slate-800 mb-6">Collection Agents Roster</h2>
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold font-poppins text-slate-800">Collection Agents Roster</h2>
+            <button class="btn-primary flex items-center gap-2 h-11 px-4 text-xs font-semibold shadow-sm" onclick="openAddModal('agent')">
+              <span class="material-symbols-outlined text-sm">person_add</span> Assign Agent
+            </button>
+          </div>
           <div class="jtc-card bg-white">
             <div class="jtc-table-container">
               <table class="jtc-table">
@@ -413,6 +430,37 @@
           </div>
         </div>
 
+        <!-- Tab 9: Settings Pane -->
+        <div id="admin-pane-settings" class="admin-tab-pane animate-fade-in" style="display: none;">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-2xl font-bold font-poppins text-slate-800">Settings & Administrative Users</h2>
+              <p class="text-xs text-slate-500 mt-1">Manage system configurations, roles, permissions, and profiles</p>
+            </div>
+            <button class="btn-primary flex items-center gap-2 h-11 px-4 text-xs font-semibold shadow-sm" onclick="openAddModal('user')">
+              <span class="material-symbols-outlined text-sm">person_add</span> Add User
+            </button>
+          </div>
+          
+          <div class="jtc-card bg-white">
+            <div class="jtc-table-container">
+              <table class="jtc-table">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Email Address</th>
+                    <th>Role Designation</th>
+                    <th>Status</th>
+                    <th>Last Active</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Overlays/Modals inside Admin Portal -->
         <!-- Order Detail Slideout Overlay -->
         <div id="admin-order-detail-panel" class="absolute top-0 right-0 h-full w-96 bg-white border-l border-slate-200 shadow-2xl z-40 p-6 flex flex-col justify-between hidden animate-fade-in">
@@ -494,23 +542,23 @@
           <div class="absolute bottom-0 left-0 w-full h-[65px] bg-white border-t border-slate-100 flex justify-around items-center px-4 pb-2 z-50 shadow-lg" id="customer-bottom-nav" style="display: none;">
             <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="home" onclick="navigateCustomer('home')">
               <span class="material-symbols-outlined text-xl">home</span>
-              <span class="text-[9px] mt-0.5">Home</span>
+              <span class="text-[9px] mt-0.5 font-medium">Home</span>
             </button>
             <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="brands" onclick="navigateCustomer('categories')">
               <span class="material-symbols-outlined text-xl">grid_view</span>
-              <span class="text-[9px] mt-0.5">Categories</span>
+              <span class="text-[9px] mt-0.5 font-medium">Categories</span>
             </button>
             <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="orders" onclick="navigateCustomer('dispatch')">
               <span class="material-symbols-outlined text-xl">local_shipping</span>
-              <span class="text-[9px] mt-0.5">Timeline</span>
+              <span class="text-[9px] mt-0.5 font-medium">Timeline</span>
             </button>
             <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="invoices" onclick="navigateCustomer('invoices')">
               <span class="material-symbols-outlined text-xl">receipt_long</span>
-              <span class="text-[9px] mt-0.5">Billing</span>
+              <span class="text-[9px] mt-0.5 font-medium">Billing</span>
             </button>
             <button class="cust-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="profile" onclick="navigateCustomer('profile')">
               <span class="material-symbols-outlined text-xl">person</span>
-              <span class="text-[9px] mt-0.5">Profile</span>
+              <span class="text-[9px] mt-0.5 font-medium">Profile</span>
             </button>
           </div>
         </div>
@@ -545,15 +593,15 @@
           <div class="absolute bottom-0 left-0 w-full h-[65px] bg-white border-t border-slate-100 flex justify-around items-center px-4 pb-2 z-50 shadow-lg" id="agent-bottom-nav" style="display: none;">
             <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="home" onclick="navigateAgent('home')">
               <span class="material-symbols-outlined text-xl">route</span>
-              <span class="text-[9px] mt-0.5">Route Plan</span>
+              <span class="text-[9px] mt-0.5 font-medium">Route Plan</span>
             </button>
             <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="leaderboard" onclick="navigateAgent('leaderboard')">
               <span class="material-symbols-outlined text-xl">social_leaderboard</span>
-              <span class="text-[9px] mt-0.5">Performance</span>
+              <span class="text-[9px] mt-0.5 font-medium">Performance</span>
             </button>
             <button class="agent-nav-btn flex flex-col items-center justify-center text-slate-400" data-screen="history" onclick="navigateAgent('history')">
               <span class="material-symbols-outlined text-xl">receipt_long</span>
-              <span class="text-[9px] mt-0.5">History</span>
+              <span class="text-[9px] mt-0.5 font-medium">History</span>
             </button>
           </div>
         </div>

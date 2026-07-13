@@ -9,11 +9,12 @@ let state = {
   agents: [],
   collections: [],
   syncLogs: [],
+  adminUsers: [],
   
   // Navigation State
   activePlatform: 'admin', // 'admin', 'customer', 'agent', 'specs'
   adminTab: 'dashboard',
-  customerScreen: 'welcome', // welcome, login, register, home, categories, listing, details, cart, confirmation, dispatch, invoices, payments, profile
+  customerScreen: 'welcome', // welcome, login, register, home, categories, listing, details, cart, confirmation, dispatch, invoices, profile, pricelist, support, schemes, helpfaq
   agentScreen: 'login', // login, home, collection_form, success, leaderboard, history
   
   // Interaction State
@@ -31,6 +32,9 @@ let state = {
   selectedOrderId: null,
   selectedInvoiceNo: null,
   activeCollectionFirm: null, // firm object currently collecting for
+  searchQuery: '',
+  categoryFilter: 'All',
+  brandFilter: 'All',
   
   // Notifications
   notifications: [
@@ -49,6 +53,7 @@ function initApp() {
   state.agents = Database.getAgents();
   state.collections = Database.getCollections();
   state.syncLogs = Database.getSyncLogs();
+  state.adminUsers = Database.getAdminUsers();
   
   // Setup Platform Switcher listeners
   document.querySelectorAll('.platform-btn').forEach(btn => {
@@ -58,9 +63,17 @@ function initApp() {
     });
   });
 
+  // Attach button ripple effects globally
+  document.body.addEventListener('click', function(e) {
+    const target = e.target.closest('.btn-primary, .btn-secondary, .platform-btn, .cust-nav-btn, .agent-nav-btn');
+    if (target) {
+      createRipple(e, target);
+    }
+  });
+
   // Render initial platform view
   renderCurrentPlatform();
-  showToast("Application Initialized & Synchronized with ERP Database");
+  showToast("Design System Ready & Active", "success");
 }
 
 function saveState() {
@@ -71,6 +84,27 @@ function saveState() {
   Database.saveAgents(state.agents);
   Database.saveCollections(state.collections);
   Database.saveSyncLogs(state.syncLogs);
+  Database.saveAdminUsers(state.adminUsers);
+}
+
+// Button Ripple Effect
+function createRipple(event, element) {
+  const circle = document.createElement("span");
+  const diameter = Math.max(element.clientWidth, element.clientHeight);
+  const radius = diameter / 2;
+
+  circle.style.width = circle.style.height = `${diameter}px`;
+  
+  const rect = element.getBoundingClientRect();
+  circle.style.left = `${event.clientX - rect.left - radius}px`;
+  circle.style.top = `${event.clientY - rect.top - radius}px`;
+  circle.classList.add("ripple");
+
+  const ripple = element.getElementsByClassName("ripple")[0];
+  if (ripple) {
+    ripple.remove();
+  }
+  element.appendChild(circle);
 }
 
 function switchPlatform(platform) {
@@ -88,11 +122,10 @@ function switchPlatform(platform) {
   });
 
   renderCurrentPlatform();
-  showToast(`Switched view to: ${platform.toUpperCase()}`);
+  showToast(`Switched to: ${platform.toUpperCase()}`);
 }
 
 function renderCurrentPlatform() {
-  // Hide all main containers
   document.getElementById('admin-container').style.display = 'none';
   document.getElementById('customer-container').style.display = 'none';
   document.getElementById('agent-container').style.display = 'none';
@@ -133,12 +166,10 @@ function showToast(message, type = 'info') {
   `;
   container.appendChild(toast);
   
-  // Trigger animation
   setTimeout(() => {
     toast.classList.remove('translate-y-4', 'opacity-0');
   }, 50);
 
-  // Remove toast
   setTimeout(() => {
     toast.classList.add('translate-y-4', 'opacity-0');
     setTimeout(() => toast.remove(), 300);
@@ -154,7 +185,6 @@ function switchAdminTab(tab) {
 }
 
 function renderAdminDashboard() {
-  // Update sidebar active link UI
   const menuItems = document.querySelectorAll('.admin-menu-item');
   menuItems.forEach(item => {
     if(item.dataset.tab === state.adminTab) {
@@ -166,18 +196,16 @@ function renderAdminDashboard() {
     }
   });
 
-  // Hide all admin tab panes
   document.querySelectorAll('.admin-tab-pane').forEach(pane => {
     pane.style.display = 'none';
   });
 
-  // Show selected pane
   const activePane = document.getElementById(`admin-pane-${state.adminTab}`);
   if(activePane) {
     activePane.style.display = 'block';
   }
 
-  // Populate data depending on tab
+  // Populate dynamic tables
   if (state.adminTab === 'dashboard') {
     populateAdminDashboardHome();
   } else if (state.adminTab === 'customers') {
@@ -194,31 +222,31 @@ function renderAdminDashboard() {
     populateAdminCollections();
   } else if (state.adminTab === 'erp-sync') {
     populateAdminERPSync();
+  } else if (state.adminTab === 'settings') {
+    populateAdminSettings();
   }
 }
 
-// Sub-populators
 function populateAdminDashboardHome() {
-  // Compute metrics
   const totalOrders = state.orders.length;
   const totalSales = state.orders.reduce((sum, o) => o.status !== 'Cancelled' ? sum + o.amount : sum, 0);
   const totalCustomers = state.customers.length;
   const totalOutstanding = state.customers.reduce((sum, c) => sum + c.outstanding, 0);
-  const pendingOrders = state.orders.filter(o => o.status === 'Pending').length;
-  const pendingInvoices = state.invoices.filter(i => i.status === 'Unpaid').length;
-  const totalCollections = state.collections.reduce((sum, c) => c.status === 'Cleared' ? sum + c.amount : sum, 0);
-  const activeAgents = state.agents.filter(a => a.status === 'Active').length;
-
+  
   document.getElementById('stat-orders').innerText = totalOrders;
   document.getElementById('stat-sales').innerText = `₹${totalSales.toLocaleString('en-IN')}`;
   document.getElementById('stat-customers').innerText = totalCustomers;
   document.getElementById('stat-outstanding').innerText = `₹${totalOutstanding.toLocaleString('en-IN')}`;
+
+  const pendingOrders = state.orders.filter(o => o.status === 'Pending').length;
+  const pendingInvoices = state.invoices.filter(i => i.status === 'Unpaid').length;
+  const activeAgents = state.agents.filter(a => a.status === 'Active').length;
+
   document.getElementById('stat-pending-orders').innerText = pendingOrders;
   document.getElementById('stat-pending-invoices').innerText = pendingInvoices;
   document.getElementById('stat-collections-due').innerText = `₹${totalOutstanding.toLocaleString('en-IN')}`;
   document.getElementById('stat-active-agents').innerText = activeAgents;
 
-  // Initialize charts (Chart.js wrapper checks if canvas exists)
   setTimeout(initDashboardCharts, 100);
 }
 
@@ -238,7 +266,7 @@ function initDashboardCharts() {
             label: 'This Week (₹)',
             data: [120000, 245000, 187500, 312000, 428000, 156000, 254300],
             borderColor: '#0D47A1',
-            backgroundColor: 'rgba(13, 71, 161, 0.1)',
+            backgroundColor: 'rgba(13, 71, 161, 0.08)',
             fill: true,
             tension: 0.4,
             borderWidth: 3
@@ -259,7 +287,7 @@ function initDashboardCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { display: true, position: 'bottom' } },
-        scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } }
+        scales: { y: { grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
       }
     });
   }
@@ -269,7 +297,7 @@ function initDashboardCharts() {
     categoryChart = new Chart(catCtx, {
       type: 'doughnut',
       data: {
-        labels: ['Wires & Cables', 'Electrical', 'Pumps', 'Solar Solutions', 'Fans', 'Switchgears'],
+        labels: ['Wires & Cables', 'Electrical', 'Pumps', 'Solar Solutions', 'Fans', 'Motors'],
         datasets: [{
           data: [35, 25, 15, 10, 10, 5],
           backgroundColor: ['#0D47A1', '#1565C0', '#0288D1', '#FF9800', '#FB8C00', '#F9A825'],
@@ -280,7 +308,7 @@ function initDashboardCharts() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { position: 'right' } },
-        cutout: '65%'
+        cutout: '70%'
       }
     });
   }
@@ -292,18 +320,24 @@ function populateAdminCustomers() {
   state.customers.forEach(cust => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="font-poppins font-medium">${cust.name}</td>
+      <td class="font-poppins font-semibold text-slate-800">${cust.name}</td>
       <td class="font-mono">${cust.phone}</td>
       <td>${cust.email}</td>
       <td>${cust.city}</td>
-      <td class="font-mono text-right font-medium text-slate-800">₹${cust.outstanding.toLocaleString('en-IN')}</td>
+      <td class="font-mono text-right font-bold text-slate-800">₹${cust.outstanding.toLocaleString('en-IN')}</td>
       <td><span class="status-chip ${cust.status === 'Active' ? 'status-delivered' : 'status-cancelled'}">${cust.status}</span></td>
       <td>
-        <button class="text-blue-700 hover:text-blue-900 font-medium" onclick="viewCustomerLedger('${cust.code}')">View Ledger</button>
+        <button class="text-blue-700 hover:text-blue-900 font-semibold" onclick="viewCustomerLedger('${cust.code}')">View Ledger</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+function viewCustomerLedger(code) {
+  const cust = state.customers.find(c => c.code === code);
+  if(!cust) return;
+  alert(`Ledger details for ${cust.name}:\nOutstanding Balance: ₹${cust.outstanding.toLocaleString('en-IN')}\nCredit Limit: ₹${cust.creditLimit.toLocaleString('en-IN')}\nGSTIN: ${cust.gstin}`);
 }
 
 function populateAdminOrders() {
@@ -323,17 +357,17 @@ function populateAdminOrders() {
     let payClass = order.paymentStatus === 'Paid' ? 'status-paid' : 'status-unpaid';
     
     tr.innerHTML = `
-      <td class="font-mono font-semibold">${order.id}</td>
-      <td class="font-poppins">${order.customer}</td>
-      <td class="text-xs text-slate-500">${order.date}</td>
-      <td class="font-mono font-medium">₹${order.amount.toLocaleString('en-IN')}</td>
+      <td class="font-mono font-bold text-slate-800">${order.id}</td>
+      <td class="font-poppins font-medium">${order.customer}</td>
+      <td class="text-xs text-slate-500 font-mono">${order.date}</td>
+      <td class="font-mono font-bold text-slate-700">₹${order.amount.toLocaleString('en-IN')}</td>
       <td><span class="status-chip ${statusClass}">${order.status}</span></td>
       <td><span class="status-chip ${payClass}">${order.paymentStatus}</span></td>
       <td class="flex gap-2">
-        <button class="px-3 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded text-slate-700" onclick="viewOrderDetailsAdmin('${order.id}')">View</button>
-        ${order.status === 'Confirmed' ? `<button class="px-3 py-1 text-xs font-semibold bg-purple-100 hover:bg-purple-200 text-purple-700 rounded" onclick="updateOrderStatus('${order.id}', 'Packed')">Pack</button>` : ''}
-        ${order.status === 'Packed' ? `<button class="px-3 py-1 text-xs font-semibold bg-teal-100 hover:bg-teal-200 text-teal-700 rounded" onclick="updateOrderStatus('${order.id}', 'Dispatched')">Dispatch</button>` : ''}
-        ${order.status === 'Dispatched' ? `<button class="px-3 py-1 text-xs font-semibold bg-green-100 hover:bg-green-200 text-green-700 rounded" onclick="updateOrderStatus('${order.id}', 'Delivered')">Deliver</button>` : ''}
+        <button class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded text-slate-700 transition" onclick="viewOrderDetailsAdmin('${order.id}')">View</button>
+        ${order.status === 'Confirmed' ? `<button class="px-3 py-1.5 text-xs font-semibold bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition" onclick="updateOrderStatus('${order.id}', 'Packed')">Pack</button>` : ''}
+        ${order.status === 'Packed' ? `<button class="px-3 py-1.5 text-xs font-semibold bg-teal-100 hover:bg-teal-200 text-teal-700 rounded transition" onclick="updateOrderStatus('${order.id}', 'Dispatched')">Dispatch</button>` : ''}
+        ${order.status === 'Dispatched' ? `<button class="px-3 py-1.5 text-xs font-semibold bg-green-100 hover:bg-green-200 text-green-700 rounded transition" onclick="updateOrderStatus('${order.id}', 'Delivered')">Deliver</button>` : ''}
       </td>
     `;
     tbody.appendChild(tr);
@@ -345,7 +379,6 @@ function viewOrderDetailsAdmin(orderId) {
   if(!order) return;
   state.selectedOrderId = orderId;
   
-  // Show details panel overlay
   const panel = document.getElementById('admin-order-detail-panel');
   panel.classList.remove('hidden');
   
@@ -391,7 +424,6 @@ function updateOrderStatus(orderId, newStatus) {
   if(!order) return;
   order.status = newStatus;
   
-  // Format Date-Time
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + `, ${now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}`;
   
@@ -401,10 +433,8 @@ function updateOrderStatus(orderId, newStatus) {
     desc: `Status updated to ${newStatus} in admin console.`
   });
 
-  // Sync back to invoice if delivered
   if(newStatus === 'Delivered') {
     order.paymentStatus = 'Paid';
-    // Update matching invoice
     const inv = state.invoices.find(i => i.orderId === orderId);
     if(inv) inv.status = 'Paid';
   }
@@ -421,12 +451,12 @@ function populateAdminProducts() {
   state.products.forEach(prod => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="font-semibold text-slate-700">${prod.name}</td>
+      <td class="font-semibold text-slate-800">${prod.name}</td>
       <td>${prod.category}</td>
-      <td>${prod.brand}</td>
+      <td class="font-poppins">${prod.brand}</td>
       <td class="font-mono text-xs">${prod.sku}</td>
-      <td class="font-mono">₹${prod.price.toLocaleString('en-IN')}</td>
-      <td class="font-mono text-center">${prod.stock}</td>
+      <td class="font-mono font-semibold">₹${prod.price.toLocaleString('en-IN')}</td>
+      <td class="font-mono text-center font-bold">${prod.stock}</td>
       <td><span class="status-chip ${prod.stock > 10 ? 'status-delivered' : 'status-pending'}">${prod.stock > 10 ? 'In Stock' : 'Low Stock'}</span></td>
     `;
     tbody.appendChild(tr);
@@ -438,19 +468,18 @@ function populateAdminInvoices() {
   tbody.innerHTML = '';
   state.invoices.forEach(inv => {
     const tr = document.createElement('tr');
-    let statusClass = 'status-unpaid';
-    if(inv.status === 'Paid') statusClass = 'status-delivered';
+    let statusClass = inv.status === 'Paid' ? 'status-delivered' : 'status-pending';
     if(inv.status === 'Overdue') statusClass = 'status-cancelled';
 
     tr.innerHTML = `
-      <td class="font-mono font-semibold">${inv.invoiceNo}</td>
+      <td class="font-mono font-bold text-slate-800">${inv.invoiceNo}</td>
       <td class="font-mono text-xs text-slate-500">${inv.orderId}</td>
-      <td class="font-poppins">${inv.customer}</td>
-      <td class="text-xs text-slate-500">${inv.date}</td>
-      <td class="font-mono font-medium">₹${inv.amount.toLocaleString('en-IN')}</td>
+      <td class="font-poppins font-medium">${inv.customer}</td>
+      <td class="text-xs text-slate-500 font-mono">${inv.date}</td>
+      <td class="font-mono font-bold text-slate-700">₹${inv.amount.toLocaleString('en-IN')}</td>
       <td><span class="status-chip ${statusClass}">${inv.status}</span></td>
       <td>
-        <button class="px-3 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded" onclick="simulateInvoicePDF('${inv.invoiceNo}')">PDF</button>
+        <button class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition" onclick="simulateInvoicePDF('${inv.invoiceNo}')">PDF</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -466,18 +495,18 @@ function populateAdminAgents() {
     tr.innerHTML = `
       <td class="flex items-center gap-3">
         <img class="w-8 h-8 rounded-full object-cover shadow-sm" src="${agt.avatarUrl}" alt="${agt.name}"/>
-        <span class="font-poppins font-medium text-slate-800">${agt.name}</span>
+        <span class="font-poppins font-semibold text-slate-800">${agt.name}</span>
       </td>
       <td class="font-mono text-sm">${agt.phone}</td>
       <td>${agt.area}</td>
-      <td class="font-mono text-right text-rose-700">₹${agt.pending.toLocaleString('en-IN')}</td>
-      <td class="font-mono text-right text-emerald-700">₹${agt.collected.toLocaleString('en-IN')}</td>
+      <td class="font-mono text-right text-rose-700 font-semibold">₹${agt.pending.toLocaleString('en-IN')}</td>
+      <td class="font-mono text-right text-emerald-700 font-bold">₹${agt.collected.toLocaleString('en-IN')}</td>
       <td>
         <div class="flex items-center gap-2">
           <div class="w-24 bg-slate-200 h-2 rounded-full overflow-hidden">
-            <div class="bg-blue-600 h-full rounded-full" style="width: ${Math.min(completionPercent, 100)}%"></div>
+            <div class="bg-indigo-600 h-full rounded-full" style="width: ${Math.min(completionPercent, 100)}%"></div>
           </div>
-          <span class="text-xs font-semibold font-mono">${completionPercent}%</span>
+          <span class="text-xs font-bold font-mono">${completionPercent}%</span>
         </div>
       </td>
       <td><span class="status-chip ${agt.status === 'Active' ? 'status-delivered' : 'status-cancelled'}">${agt.status}</span></td>
@@ -494,16 +523,16 @@ function populateAdminCollections() {
     let statusClass = col.status === 'Cleared' ? 'status-delivered' : 'status-pending';
     
     tr.innerHTML = `
-      <td class="font-mono font-semibold">${col.id}</td>
+      <td class="font-mono font-bold text-slate-800">${col.id}</td>
       <td class="font-poppins">${col.agent}</td>
-      <td class="font-poppins font-medium">${col.customer}</td>
-      <td class="font-mono font-semibold text-slate-800">₹${col.amount.toLocaleString('en-IN')}</td>
-      <td class="text-xs text-slate-500">${col.date}</td>
+      <td class="font-poppins font-medium text-slate-700">${col.customer}</td>
+      <td class="font-mono font-bold text-slate-800">₹${col.amount.toLocaleString('en-IN')}</td>
+      <td class="text-xs text-slate-500 font-mono">${col.date}</td>
       <td><span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold font-poppins">${col.mode}</span></td>
       <td class="font-mono text-xs text-slate-400">${col.reference}</td>
       <td><span class="status-chip ${statusClass}">${col.status}</span></td>
       <td>
-        ${col.status === 'Pending Verification' ? `<button class="px-3 py-1 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded" onclick="verifyCollection('${col.id}')">Verify</button>` : `<span class="text-xs text-emerald-600 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-sm">verified</span> Verified</span>`}
+        ${col.status === 'Pending Verification' ? `<button class="px-3 py-1.5 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded transition" onclick="verifyCollection('${col.id}')">Verify</button>` : `<span class="text-xs text-emerald-600 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-sm">verified</span> Verified</span>`}
       </td>
     `;
     tbody.appendChild(tr);
@@ -515,13 +544,11 @@ function verifyCollection(colId) {
   if(!col) return;
   col.status = 'Cleared';
   
-  // Deduct outstanding from dealer
   const dealer = state.customers.find(c => c.name === col.customer);
   if(dealer) {
     dealer.outstanding = Math.max(0, dealer.outstanding - col.amount);
   }
   
-  // Add collected amount to agent totals
   const agent = state.agents.find(a => a.name === col.agent);
   if(agent) {
     agent.collected += col.amount;
@@ -530,7 +557,7 @@ function verifyCollection(colId) {
 
   saveState();
   populateAdminCollections();
-  showToast(`Collection receipt ${colId} verified and updated in ERP ledger`, 'success');
+  showToast(`Collection receipt ${colId} verified and cleared!`, 'success');
 }
 
 function populateAdminERPSync() {
@@ -567,7 +594,6 @@ function triggerManualERPSync() {
   syncBtn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">sync</span> Syncing ERP...`;
   
   setTimeout(() => {
-    // Add sync log
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     
@@ -584,7 +610,215 @@ function triggerManualERPSync() {
     syncBtn.disabled = false;
     syncBtn.innerHTML = `<span class="material-symbols-outlined text-sm">sync</span> Sync Now`;
     showToast("ERP Re-Synchronization Complete!", "success");
-  }, 2000);
+  }, 1500);
+}
+
+function populateAdminSettings() {
+  const tbody = document.getElementById('admin-users-tbody');
+  tbody.innerHTML = '';
+  state.adminUsers.forEach(user => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="font-poppins font-semibold text-slate-800">${user.name}</td>
+      <td class="font-mono text-sm">${user.email}</td>
+      <td><span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded text-xs font-semibold font-poppins">${user.role}</span></td>
+      <td><span class="status-chip ${user.status === 'Active' ? 'status-delivered' : 'status-cancelled'}">${user.status}</span></td>
+      <td class="font-mono text-xs text-slate-500">${user.lastLogin}</td>
+      <td>
+        <button class="text-blue-700 hover:text-blue-900 font-semibold" onclick="editAdminUserSim('${user.email}')">Edit</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function editAdminUserSim(email) {
+  alert(`Edit details for user: ${email}`);
+}
+
+function openAddModal(type) {
+  const overlay = document.createElement('div');
+  overlay.className = 'jtc-dialog-overlay';
+  overlay.id = 'add-modal-overlay';
+  
+  let modalHtml = '';
+  if (type === 'customer') {
+    modalHtml = `
+      <div class="jtc-dialog">
+        <h3 class="text-lg font-bold font-poppins text-slate-800 mb-6">Add New B2B Dealer</h3>
+        <div class="flex flex-col gap-4">
+          <input type="text" id="new-cust-name" class="jtc-input" placeholder="Dealer / Firm Name"/>
+          <input type="text" id="new-cust-phone" class="jtc-input" placeholder="Mobile Number"/>
+          <input type="text" id="new-cust-email" class="jtc-input" placeholder="Email Address"/>
+          <input type="text" id="new-cust-gst" class="jtc-input" placeholder="GSTIN No"/>
+          <input type="text" id="new-cust-city" class="jtc-input" placeholder="City Hub"/>
+          <input type="number" id="new-cust-limit" class="jtc-input" placeholder="Credit Limit (₹)" value="500000"/>
+        </div>
+        <div class="flex gap-4 mt-8">
+          <button class="btn-primary flex-1" onclick="saveNewCustomer()">Save Dealer</button>
+          <button class="btn-secondary flex-1" onclick="closeAddModal()">Cancel</button>
+        </div>
+      </div>
+    `;
+  } else if (type === 'product') {
+    modalHtml = `
+      <div class="jtc-dialog">
+        <h3 class="text-lg font-bold font-poppins text-slate-800 mb-6">Add Stock Product</h3>
+        <div class="flex flex-col gap-4">
+          <input type="text" id="new-prod-name" class="jtc-input" placeholder="Product Name"/>
+          <input type="text" id="new-prod-category" class="jtc-input" placeholder="Category (e.g. Wires & Cables)"/>
+          <input type="text" id="new-prod-brand" class="jtc-input" placeholder="Brand Name"/>
+          <input type="text" id="new-prod-sku" class="jtc-input" placeholder="SKU Code"/>
+          <input type="number" id="new-prod-price" class="jtc-input" placeholder="Price per Unit (₹)"/>
+          <input type="number" id="new-prod-stock" class="jtc-input" placeholder="Initial Stock Qty"/>
+        </div>
+        <div class="flex gap-4 mt-8">
+          <button class="btn-primary flex-1" onclick="saveNewProduct()">Add Product</button>
+          <button class="btn-secondary flex-1" onclick="closeAddModal()">Cancel</button>
+        </div>
+      </div>
+    `;
+  } else if (type === 'agent') {
+    modalHtml = `
+      <div class="jtc-dialog">
+        <h3 class="text-lg font-bold font-poppins text-slate-800 mb-6">Assign Collection Agent</h3>
+        <div class="flex flex-col gap-4">
+          <input type="text" id="new-agt-name" class="jtc-input" placeholder="Agent Name"/>
+          <input type="text" id="new-agt-phone" class="jtc-input" placeholder="Phone Number"/>
+          <input type="text" id="new-agt-area" class="jtc-input" placeholder="Assigned Territory"/>
+          <input type="number" id="new-agt-target" class="jtc-input" placeholder="Monthly Target (₹)" value="300000"/>
+        </div>
+        <div class="flex gap-4 mt-8">
+          <button class="btn-primary flex-1" onclick="saveNewAgent()">Assign Agent</button>
+          <button class="btn-secondary flex-1" onclick="closeAddModal()">Cancel</button>
+        </div>
+      </div>
+    `;
+  } else if (type === 'user') {
+    modalHtml = `
+      <div class="jtc-dialog">
+        <h3 class="text-lg font-bold font-poppins text-slate-800 mb-6">Add Admin User</h3>
+        <div class="flex flex-col gap-4">
+          <input type="text" id="new-user-name" class="jtc-input" placeholder="Full Name"/>
+          <input type="text" id="new-user-email" class="jtc-input" placeholder="Email Address"/>
+          <select id="new-user-role" class="jtc-input">
+            <option value="Super Admin">Super Admin</option>
+            <option value="Manager">Manager</option>
+            <option value="Sales Executive">Sales Executive</option>
+            <option value="Accounts">Accounts</option>
+            <option value="Store Manager">Store Manager</option>
+          </select>
+        </div>
+        <div class="flex gap-4 mt-8">
+          <button class="btn-primary flex-1" onclick="saveNewAdminUser()">Add User</button>
+          <button class="btn-secondary flex-1" onclick="closeAddModal()">Cancel</button>
+        </div>
+      </div>
+    `;
+  }
+  
+  overlay.innerHTML = modalHtml;
+  document.body.appendChild(overlay);
+}
+
+function closeAddModal() {
+  const modal = document.getElementById('add-modal-overlay');
+  if (modal) modal.remove();
+}
+
+function saveNewCustomer() {
+  const name = document.getElementById('new-cust-name').value;
+  const phone = document.getElementById('new-cust-phone').value;
+  const email = document.getElementById('new-cust-email').value;
+  const gstin = document.getElementById('new-cust-gst').value;
+  const city = document.getElementById('new-cust-city').value;
+  const limit = parseFloat(document.getElementById('new-cust-limit').value);
+
+  if(!name || !phone || !email) {
+    showToast("Please enter all required dealer details", "error");
+    return;
+  }
+
+  state.customers.push({
+    code: "JTCDE0" + Math.floor(100 + Math.random() * 900),
+    name, owner: name, phone, email, address: `${city}, Uttar Pradesh`,
+    gstin, creditLimit: limit, outstanding: 0, status: "Active", city
+  });
+
+  saveState();
+  populateAdminCustomers();
+  closeAddModal();
+  showToast("New dealer account registered!", "success");
+}
+
+function saveNewProduct() {
+  const name = document.getElementById('new-prod-name').value;
+  const category = document.getElementById('new-prod-category').value;
+  const brand = document.getElementById('new-prod-brand').value;
+  const sku = document.getElementById('new-prod-sku').value;
+  const price = parseFloat(document.getElementById('new-prod-price').value);
+  const stock = parseInt(document.getElementById('new-prod-stock').value);
+
+  if(!name || !category || !price) {
+    showToast("Please enter all required product fields", "error");
+    return;
+  }
+
+  state.products.push({
+    id: "PROD" + Math.floor(100 + Math.random() * 900),
+    name, category, brand, sku, price, stock, unit: "Piece",
+    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=60",
+    specs: "Added in admin interface", minOrder: 1
+  });
+
+  saveState();
+  populateAdminProducts();
+  closeAddModal();
+  showToast("Product added to stock ledger!", "success");
+}
+
+function saveNewAgent() {
+  const name = document.getElementById('new-agt-name').value;
+  const phone = document.getElementById('new-agt-phone').value;
+  const area = document.getElementById('new-agt-area').value;
+  const target = parseFloat(document.getElementById('new-agt-target').value);
+
+  if(!name || !phone || !area) {
+    showToast("Please fill agent details", "error");
+    return;
+  }
+
+  state.agents.push({
+    id: "AGT" + Math.floor(100 + Math.random() * 900),
+    name, phone, area, pending: 0, collected: 0, status: "Active", target,
+    todayFirms: [],
+    avatarUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60"
+  });
+
+  saveState();
+  populateAdminAgents();
+  closeAddModal();
+  showToast("Collection agent roster updated!", "success");
+}
+
+function saveNewAdminUser() {
+  const name = document.getElementById('new-user-name').value;
+  const email = document.getElementById('new-user-email').value;
+  const role = document.getElementById('new-user-role').value;
+
+  if(!name || !email) {
+    showToast("Name and email are required", "error");
+    return;
+  }
+
+  state.adminUsers.push({
+    name, email, role, status: "Active", lastLogin: "Never logged in"
+  });
+
+  saveState();
+  populateAdminSettings();
+  closeAddModal();
+  showToast("Admin account user added!", "success");
 }
 
 function simulateInvoicePDF(invoiceNo) {
@@ -600,7 +834,7 @@ function simulateInvoicePDF(invoiceNo) {
       </button>
       <div class="flex justify-between items-start border-b border-slate-100 pb-6 mb-6">
         <div>
-          <div class="text-xs font-bold text-blue-900 tracking-wider uppercase">Jain Trading Corporation</div>
+          <div class="text-xs font-bold text-blue-900 tracking-wider uppercase font-poppins">Jain Trading Corporation</div>
           <div class="text-xs text-slate-500 mt-1">B2B Distribution Network</div>
         </div>
         <div class="text-right">
@@ -618,7 +852,7 @@ function simulateInvoicePDF(invoiceNo) {
         <div class="text-right">
           <span class="text-slate-400 block uppercase tracking-wider font-bold">Details</span>
           <span class="text-slate-800 block mt-1"><strong>Invoice Date:</strong> ${inv.date}</span>
-          <span class="text-slate-800"><strong>Order Ref:</strong> ${inv.orderId}</span>
+          <span class="text-slate-800 font-mono"><strong>Order Ref:</strong> ${inv.orderId}</span>
         </div>
       </div>
       
@@ -663,40 +897,66 @@ function simulateInvoicePDF(invoiceNo) {
 // ----------------------------------------------------
 function navigateCustomer(screen) {
   state.customerScreen = screen;
-  renderCustomerApp();
+  
+  // Skeleton Loading Shimmer Simulation
+  const screenArea = document.getElementById('customer-screen-area');
+  screenArea.innerHTML = `
+    <div class="flex flex-col gap-4 py-8">
+      <div class="shimmer-loader h-12 w-3/4 rounded-lg"></div>
+      <div class="shimmer-loader h-36 w-full rounded-2xl"></div>
+      <div class="shimmer-loader h-20 w-full rounded-xl"></div>
+      <div class="shimmer-loader h-20 w-full rounded-xl"></div>
+    </div>
+  `;
+  
+  setTimeout(() => {
+    renderCustomerApp();
+  }, 250); // Fluid loader delay
 }
 
 function renderCustomerApp() {
   const container = document.getElementById('customer-screen-area');
   container.innerHTML = '';
+  
+  // Transition Wrapper for slide effects
+  const wrap = document.createElement('div');
+  wrap.className = 'animate-slide-in';
 
-  // Get matching UI view generator
   if(state.customerScreen === 'welcome') {
-    container.innerHTML = generateCustomerWelcomeUI();
+    wrap.innerHTML = generateCustomerWelcomeUI();
   } else if (state.customerScreen === 'login') {
-    container.innerHTML = generateCustomerLoginUI();
+    wrap.innerHTML = generateCustomerLoginUI();
   } else if (state.customerScreen === 'home') {
-    container.innerHTML = generateCustomerHomeUI();
+    wrap.innerHTML = generateCustomerHomeUI();
   } else if (state.customerScreen === 'categories') {
-    container.innerHTML = generateCustomerCategoriesUI();
+    wrap.innerHTML = generateCustomerCategoriesUI();
   } else if (state.customerScreen === 'listing') {
-    container.innerHTML = generateCustomerListingUI();
+    wrap.innerHTML = generateCustomerListingUI();
   } else if (state.customerScreen === 'details') {
-    container.innerHTML = generateCustomerDetailsUI();
+    wrap.innerHTML = generateCustomerDetailsUI();
   } else if (state.customerScreen === 'cart') {
-    container.innerHTML = generateCustomerCartUI();
+    wrap.innerHTML = generateCustomerCartUI();
   } else if (state.customerScreen === 'confirmation') {
-    container.innerHTML = generateCustomerConfirmationUI();
+    wrap.innerHTML = generateCustomerConfirmationUI();
     startBookingCountdown();
   } else if (state.customerScreen === 'invoices') {
-    container.innerHTML = generateCustomerInvoicesUI();
+    wrap.innerHTML = generateCustomerInvoicesUI();
   } else if (state.customerScreen === 'dispatch') {
-    container.innerHTML = generateCustomerDispatchUI();
+    wrap.innerHTML = generateCustomerDispatchUI();
   } else if (state.customerScreen === 'profile') {
-    container.innerHTML = generateCustomerProfileUI();
+    wrap.innerHTML = generateCustomerProfileUI();
+  } else if (state.customerScreen === 'pricelist') {
+    wrap.innerHTML = generateCustomerPriceListUI();
+  } else if (state.customerScreen === 'support') {
+    wrap.innerHTML = generateCustomerSupportUI();
+  } else if (state.customerScreen === 'schemes') {
+    wrap.innerHTML = generateCustomerSchemesUI();
+  } else if (state.customerScreen === 'helpfaq') {
+    wrap.innerHTML = generateCustomerHelpFAQUI();
   }
 
-  // Render bottom nav if not in login/welcome
+  container.appendChild(wrap);
+
   const isNavigable = !['welcome', 'login'].includes(state.customerScreen);
   const bottomNav = document.getElementById('customer-bottom-nav');
   if(bottomNav) {
@@ -713,7 +973,7 @@ function updateCustomerBottomNavHighlight() {
                      (screen === 'orders' && ['dispatch', 'confirmation'].includes(state.customerScreen)) ||
                      (screen === 'brands' && ['categories', 'listing', 'details'].includes(state.customerScreen)) ||
                      (screen === 'invoices' && state.customerScreen === 'invoices') ||
-                     (screen === 'profile' && state.customerScreen === 'profile');
+                     (screen === 'profile' && ['profile', 'pricelist', 'support', 'schemes', 'helpfaq'].includes(state.customerScreen));
     if(isActive) {
       tab.classList.add('text-blue-900', 'font-semibold');
       tab.classList.remove('text-slate-400');
@@ -724,11 +984,10 @@ function updateCustomerBottomNavHighlight() {
   });
 }
 
-// UI Creators
 function generateCustomerWelcomeUI() {
   return `
-    <div class="h-full flex flex-col justify-between py-12 px-6 animate-fade-in text-center">
-      <div class="mt-8 flex flex-col items-center">
+    <div class="h-full flex flex-col justify-between py-8 px-2 text-center">
+      <div class="mt-6 flex flex-col items-center">
         <div class="w-16 h-16 rounded-full bg-blue-900 flex items-center justify-center mb-4 shadow-lg">
           <span class="material-symbols-outlined text-white text-3xl">electric_bolt</span>
         </div>
@@ -737,14 +996,14 @@ function generateCustomerWelcomeUI() {
         <p class="text-[10px] text-slate-400 mt-1 uppercase font-semibold">Industrial & Electrical Distributor</p>
       </div>
 
-      <div class="my-6">
-        <img class="w-full max-h-52 object-contain" src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&auto=format&fit=crop&q=60" alt="Illustrative warehouse"/>
+      <div class="my-4">
+        <img class="w-full max-h-48 object-contain rounded-2xl" src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&auto=format&fit=crop&q=60" alt="Warehouse logistics"/>
       </div>
 
       <div class="flex flex-col gap-3">
-        <h2 class="text-lg font-bold text-slate-700">Enterprise B2B Hub</h2>
-        <p class="text-xs text-slate-500 px-4">Book bulk inventory, track logistics timeline, view statements, and manage account payments with SAP ledger sync.</p>
-        <button class="btn-primary mt-4" onclick="navigateCustomer('login')">Get Started</button>
+        <h2 class="text-base font-bold text-slate-700">Enterprise B2B Hub</h2>
+        <p class="text-[11px] text-slate-500 px-2 leading-relaxed">Book bulk inventory, track logistics timeline, view statements, and manage account payments with SAP ledger sync.</p>
+        <button class="btn-primary mt-2 h-12 text-sm rounded-xl" onclick="navigateCustomer('login')">Get Started</button>
       </div>
     </div>
   `;
@@ -752,41 +1011,41 @@ function generateCustomerWelcomeUI() {
 
 function generateCustomerLoginUI() {
   return `
-    <div class="h-full flex flex-col justify-between py-8 px-6 animate-fade-in">
+    <div class="h-full flex flex-col justify-between py-6 px-2">
       <div>
         <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 mt-2 mb-6" onclick="navigateCustomer('welcome')">
           <span class="material-symbols-outlined text-sm">arrow_back</span>
         </button>
-        <h2 class="text-2xl font-bold text-slate-800">Welcome Back!</h2>
+        <h2 class="text-xl font-bold text-slate-800">Welcome Back!</h2>
         <p class="text-xs text-slate-400 mt-1">Sign in to your dealer/distributor account</p>
 
         <div class="flex flex-col gap-4 mt-8">
           <div>
-            <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Mobile Number</label>
+            <label class="text-[10px] font-bold text-slate-600 block mb-1.5 uppercase">Mobile Number</label>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">phone_iphone</span>
-              <input type="text" class="jtc-input pl-12" id="cust-phone-input" placeholder="+91 98765 43210" value="9876543210"/>
+              <input type="text" class="jtc-input pl-12 h-12 text-sm" id="cust-phone-input" placeholder="+91 98765 43210" value="9876543210"/>
             </div>
           </div>
           <div>
-            <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Security PIN / Password</label>
+            <label class="text-[10px] font-bold text-slate-600 block mb-1.5 uppercase">Security PIN / Password</label>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
-              <input type="password" class="jtc-input pl-12" id="cust-pwd-input" placeholder="••••••" value="123456"/>
+              <input type="password" class="jtc-input pl-12 h-12 text-sm" id="cust-pwd-input" placeholder="••••••" value="123456"/>
             </div>
           </div>
-          <div class="flex justify-between items-center text-xs text-slate-500">
+          <div class="flex justify-between items-center text-xs text-slate-500 mt-2">
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" checked /> Remember account
+              <input type="checkbox" checked /> Remember me
             </label>
-            <a href="#" class="text-blue-900 font-semibold">Forgot Security PIN?</a>
+            <a href="#" class="text-blue-900 font-semibold">Forgot PIN?</a>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3">
-        <button class="btn-primary" onclick="loginCustomerSim()">Login Account</button>
-        <p class="text-center text-xs text-slate-400">Don't have a dealer account? <a href="#" class="text-blue-900 font-bold">Apply Now</a></p>
+      <div class="flex flex-col gap-3 mt-8">
+        <button class="btn-primary h-12 text-sm rounded-xl" onclick="loginCustomerSim()">Login Account</button>
+        <p class="text-center text-[11px] text-slate-400">Don't have an account? <a href="#" class="text-blue-900 font-bold">Apply</a></p>
       </div>
     </div>
   `;
@@ -805,13 +1064,12 @@ function loginCustomerSim() {
 }
 
 function generateCustomerHomeUI() {
-  // Compute outstanding dues
   const dues = state.customerUser.outstanding;
   const limit = state.customerUser.creditLimit;
   const available = limit - dues;
   
   return `
-    <div class="animate-fade-in flex flex-col gap-5">
+    <div class="flex flex-col gap-4">
       <!-- App Header -->
       <div class="flex justify-between items-center bg-blue-900 -mx-4 px-4 py-4 pt-10 text-white rounded-b-3xl shadow-md">
         <div class="flex items-center gap-2">
@@ -819,96 +1077,96 @@ function generateCustomerHomeUI() {
             <span class="material-symbols-outlined text-sm text-white">store</span>
           </div>
           <div>
-            <div class="text-[10px] text-blue-200 font-semibold uppercase tracking-wider">JTC Dealer App</div>
+            <div class="text-[9px] text-blue-200 font-bold uppercase tracking-wider">JTC B2B Portal</div>
             <div class="text-xs font-semibold font-poppins">${state.customerUser.name}</div>
           </div>
         </div>
         <div class="flex gap-2">
-          <button class="relative w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" onclick="navigateCustomer('invoices')">
+          <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" onclick="navigateCustomer('invoices')">
             <span class="material-symbols-outlined text-lg">receipt_long</span>
           </button>
           <button class="relative w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" onclick="showToast('No new alerts.')">
             <span class="material-symbols-outlined text-lg">notifications</span>
-            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full"></span>
+            <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
           </button>
         </div>
       </div>
 
       <!-- Financial Card -->
-      <div class="bg-gradient-to-br from-blue-950 to-blue-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden -mt-2">
-        <div class="absolute -right-10 -bottom-10 w-36 h-36 bg-white/5 rounded-full"></div>
+      <div class="bg-gradient-to-br from-blue-950 to-blue-800 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-white/5 rounded-full"></div>
         <div class="flex justify-between items-start">
           <div>
-            <span class="text-[10px] text-blue-200 block uppercase font-bold tracking-widest">Outstanding Dues</span>
-            <strong class="text-2xl font-mono block mt-1">₹${dues.toLocaleString('en-IN')}</strong>
+            <span class="text-[9px] text-blue-200 block uppercase font-bold tracking-widest">Outstanding Dues</span>
+            <strong class="text-xl font-mono block mt-1">₹${dues.toLocaleString('en-IN')}</strong>
           </div>
-          <button class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-blue-950 font-bold rounded-lg text-xs" onclick="navigateCustomer('invoices')">Pay Dues</button>
+          <button class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-blue-950 font-bold rounded-lg text-[10px]" onclick="navigateCustomer('invoices')">Pay Dues</button>
         </div>
-        <div class="border-t border-white/15 my-4"></div>
-        <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="border-t border-white/10 my-3"></div>
+        <div class="grid grid-cols-2 gap-2 text-[10px]">
           <div>
-            <span class="text-blue-200 block text-[10px]">CREDIT LIMIT</span>
-            <span class="font-mono font-semibold">₹${limit.toLocaleString('en-IN')}</span>
+            <span class="text-blue-200 block text-[8px] uppercase">Credit Limit</span>
+            <span class="font-mono font-bold">₹${limit.toLocaleString('en-IN')}</span>
           </div>
           <div class="text-right">
-            <span class="text-blue-200 block text-[10px]">AVAILABLE BALANCE</span>
-            <span class="font-mono font-semibold text-emerald-300">₹${available.toLocaleString('en-IN')}</span>
+            <span class="text-blue-200 block text-[8px] uppercase">Available Bal</span>
+            <span class="font-mono font-bold text-emerald-300">₹${available.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>
 
-      <!-- Quick Actions -->
+      <!-- Quick Actions Grid -->
       <div>
-        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Quick Actions</h3>
+        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Quick Actions</h3>
         <div class="grid grid-cols-4 gap-2">
-          <button class="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-300" onclick="navigateCustomer('categories')">
-            <span class="material-symbols-outlined text-blue-900 mb-1">shopping_basket</span>
-            <span class="text-[10px] font-semibold text-slate-600">Order Stock</span>
+          <button class="bg-white rounded-xl p-2.5 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-200" onclick="navigateCustomer('categories')">
+            <span class="material-symbols-outlined text-blue-900 text-lg mb-1">shopping_basket</span>
+            <span class="text-[9px] font-semibold text-slate-600 leading-none">Order Stock</span>
           </button>
-          <button class="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-300" onclick="navigateCustomer('invoices')">
-            <span class="material-symbols-outlined text-blue-900 mb-1">payments</span>
-            <span class="text-[10px] font-semibold text-slate-600">Pay Dues</span>
+          <button class="bg-white rounded-xl p-2.5 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-200" onclick="navigateCustomer('pricelist')">
+            <span class="material-symbols-outlined text-blue-900 text-lg mb-1">download_file</span>
+            <span class="text-[9px] font-semibold text-slate-600 leading-none">Price List</span>
           </button>
-          <button class="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100" onclick="navigateCustomer('dispatch')">
-            <span class="material-symbols-outlined text-blue-900 mb-1">local_shipping</span>
-            <span class="text-[10px] font-semibold text-slate-600">Track Truck</span>
+          <button class="bg-white rounded-xl p-2.5 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-200" onclick="navigateCustomer('schemes')">
+            <span class="material-symbols-outlined text-blue-900 text-lg mb-1">percent</span>
+            <span class="text-[9px] font-semibold text-slate-600 leading-none">Schemes</span>
           </button>
-          <button class="bg-white rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100" onclick="showToast('B2B schemes downloaded!')">
-            <span class="material-symbols-outlined text-blue-900 mb-1">percent</span>
-            <span class="text-[10px] font-semibold text-slate-600">Schemes</span>
+          <button class="bg-white rounded-xl p-2.5 flex flex-col items-center justify-center text-center shadow-sm border border-slate-100 hover:border-blue-200" onclick="navigateCustomer('support')">
+            <span class="material-symbols-outlined text-blue-900 text-lg mb-1">support</span>
+            <span class="text-[9px] font-semibold text-slate-600 leading-none">Support</span>
           </button>
         </div>
       </div>
 
-      <!-- Categories Slider -->
+      <!-- Top Brands Slider -->
       <div>
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Top Brands</h3>
-          <button class="text-xs text-blue-900 font-bold" onclick="navigateCustomer('categories')">View All</button>
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Brands</h3>
+          <button class="text-[10px] text-blue-900 font-bold" onclick="navigateCustomer('categories')">View All</button>
         </div>
         <div class="brand-slider">
           <div class="brand-card cursor-pointer" onclick="selectCategorySim('Wires & Cables')">
-            <span class="font-bold text-blue-900 font-poppins">KEI</span>
-            <span class="text-[9px] text-slate-400 mt-1">Cables</span>
+            <span class="font-bold text-blue-900 font-poppins text-sm">KEI</span>
+            <span class="text-[8px] text-slate-400">Wires</span>
           </div>
           <div class="brand-card cursor-pointer" onclick="selectCategorySim('Wires & Cables')">
-            <span class="font-bold text-blue-900 font-poppins">Polycab</span>
-            <span class="text-[9px] text-slate-400 mt-1">Wires</span>
+            <span class="font-bold text-blue-900 font-poppins text-sm">Polycab</span>
+            <span class="text-[8px] text-slate-400">Cables</span>
           </div>
           <div class="brand-card cursor-pointer" onclick="selectCategorySim('Fans')">
-            <span class="font-bold text-blue-900 font-poppins">Crompton</span>
-            <span class="text-[9px] text-slate-400 mt-1">Fans</span>
+            <span class="font-bold text-blue-900 font-poppins text-sm">Crompton</span>
+            <span class="text-[8px] text-slate-400">Fans</span>
           </div>
           <div class="brand-card cursor-pointer" onclick="selectCategorySim('Pumps')">
-            <span class="font-bold text-blue-900 font-poppins">Kirloskar</span>
-            <span class="text-[9px] text-slate-400 mt-1">Pumps</span>
+            <span class="font-bold text-blue-900 font-poppins text-sm">Kirloskar</span>
+            <span class="text-[8px] text-slate-400">Pumps</span>
           </div>
         </div>
       </div>
 
       <!-- Recent Orders List -->
       <div>
-        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">Recent Bookings</h3>
+        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Recent Bookings</h3>
         <div class="flex flex-col gap-2">
           ${state.orders.slice(0, 3).map(o => {
             let statusColor = 'text-amber-500 bg-amber-50';
@@ -918,16 +1176,16 @@ function generateCustomerHomeUI() {
             if(o.status === 'Dispatched') statusColor = 'text-teal-600 bg-teal-50';
             
             return `
-              <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center cursor-pointer" onclick="viewOrderTimelineSim('${o.id}')">
+              <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center cursor-pointer hover:border-blue-200 transition" onclick="viewOrderTimelineSim('${o.id}')">
                 <div>
-                  <div class="text-xs font-mono font-bold text-slate-800">${o.id}</div>
-                  <div class="text-[10px] text-slate-400 font-mono mt-0.5">${o.date}</div>
-                  <div class="flex items-center gap-1.5 mt-2">
-                    <span class="text-[10px] px-2 py-0.5 rounded ${statusColor} font-semibold">${o.status}</span>
-                    <span class="text-[10px] text-slate-500 font-mono">₹${o.amount.toLocaleString('en-IN')}</span>
+                  <div class="text-[11px] font-mono font-bold text-slate-800">${o.id}</div>
+                  <div class="text-[9px] text-slate-400 font-mono mt-0.5">${o.date}</div>
+                  <div class="flex items-center gap-1.5 mt-1.5">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded ${statusColor} font-semibold">${o.status}</span>
+                    <span class="text-[10px] text-slate-500 font-mono font-bold">₹${o.amount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
-                <span class="material-symbols-outlined text-slate-300 text-lg">chevron_right</span>
+                <span class="material-symbols-outlined text-slate-300 text-base">chevron_right</span>
               </div>
             `;
           }).join('')}
@@ -937,34 +1195,24 @@ function generateCustomerHomeUI() {
   `;
 }
 
-function selectCategorySim(cat) {
-  state.selectedCategory = cat;
-  navigateCustomer('listing');
-}
-
-function viewOrderTimelineSim(orderId) {
-  state.selectedOrderId = orderId;
-  navigateCustomer('dispatch');
-}
-
 function generateCustomerCategoriesUI() {
   const categories = [...new Set(state.products.map(p => p.category))];
   return `
-    <div class="animate-fade-in">
-      <div class="flex justify-between items-center mb-6 mt-2">
-        <h2 class="text-lg font-bold text-slate-800">Product Categories</h2>
+    <div class="flex flex-col gap-4">
+      <div class="flex justify-between items-center mt-2">
+        <h2 class="text-base font-bold text-slate-800">Product Categories</h2>
         <button class="relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('cart')">
           <span class="material-symbols-outlined text-lg">shopping_cart</span>
           ${state.customerCart.length > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">${state.customerCart.reduce((s,i)=>s+i.qty,0)}</span>` : ''}
         </button>
       </div>
 
-      <div class="relative mb-5">
-        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-        <input type="text" class="jtc-input pl-12 h-12 text-sm" placeholder="Search brands or products..."/>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+        <input type="text" class="jtc-input pl-10 h-10 text-xs" placeholder="Search categories or products..."/>
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-3 gap-2">
         ${categories.map(cat => {
           let icon = 'cable';
           if(cat === 'Fans') icon = 'mode_fan';
@@ -972,21 +1220,35 @@ function generateCustomerCategoriesUI() {
           if(cat === 'Solar Solutions') icon = 'solar_power';
           if(cat === 'Electrical') icon = 'bolt';
           if(cat === 'Switchgears') icon = 'settings_input_composite';
+          if(cat === 'Lighting') icon = 'lightbulb';
+          if(cat === 'Motors') icon = 'settings';
+          if(cat === 'Industrial Products') icon = 'engineering';
+          if(cat === 'Modular & Accessories') icon = 'toggle_off';
+          if(cat === 'Cable Management') icon = 'list_alt';
+          if(cat === 'Generators') icon = 'electric_car';
 
           const count = state.products.filter(p => p.category === cat).length;
 
           return `
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col justify-between h-32 cursor-pointer hover:border-blue-300" onclick="selectCategorySim('${cat}')">
-              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-900">
-                <span class="material-symbols-outlined">${icon}</span>
+            <div class="bg-white rounded-xl p-2.5 shadow-sm border border-slate-100 flex flex-col justify-between h-24 cursor-pointer hover:border-blue-300 transition" onclick="selectCategorySim('${cat}')">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-900">
+                <span class="material-symbols-outlined text-base">${icon}</span>
               </div>
               <div>
-                <h4 class="text-xs font-bold text-slate-800 leading-tight">${cat}</h4>
-                <p class="text-[10px] text-slate-400 mt-0.5">${count} Products</p>
+                <h4 class="text-[9px] font-bold text-slate-800 leading-tight">${cat}</h4>
+                <p class="text-[8px] text-slate-400 mt-0.5">${count} Items</p>
               </div>
             </div>
           `;
         }).join('')}
+      </div>
+
+      <div class="p-3 bg-blue-550 bg-slate-50 border border-slate-200 rounded-xl mt-2 flex items-center justify-between text-xs">
+        <div>
+          <strong class="text-slate-800 block text-[10px]">Can't find what you need?</strong>
+          <span class="text-slate-500 text-[9px]">Request custom stock quote</span>
+        </div>
+        <button class="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-[9px] font-semibold" onclick="showToast('Custom quote request sent!', 'success')">Request</button>
       </div>
     </div>
   `;
@@ -995,13 +1257,13 @@ function generateCustomerCategoriesUI() {
 function generateCustomerListingUI() {
   const filtered = state.products.filter(p => p.category === state.selectedCategory);
   return `
-    <div class="animate-fade-in">
-      <div class="flex items-center justify-between mb-5 mt-2">
+    <div>
+      <div class="flex items-center justify-between mb-4 mt-2">
         <div class="flex items-center gap-2">
           <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('categories')">
             <span class="material-symbols-outlined text-sm">arrow_back</span>
           </button>
-          <h2 class="text-base font-bold text-slate-800">${state.selectedCategory}</h2>
+          <h2 class="text-sm font-bold text-slate-800">${state.selectedCategory}</h2>
         </div>
         <button class="relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('cart')">
           <span class="material-symbols-outlined text-lg">shopping_cart</span>
@@ -1009,19 +1271,19 @@ function generateCustomerListingUI() {
         </button>
       </div>
 
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2.5">
         ${filtered.map(prod => {
           return `
-            <div class="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex gap-3 hover:border-blue-300">
-              <img class="w-16 h-16 rounded-lg object-cover bg-slate-100 border border-slate-100" src="${prod.image}" alt="${prod.name}"/>
+            <div class="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex gap-3 hover:border-blue-300 transition">
+              <img class="w-14 h-14 rounded-lg object-cover bg-slate-50 border border-slate-100" src="${prod.image}" alt="${prod.name}"/>
               <div class="flex-1 flex flex-col justify-between">
                 <div>
-                  <h4 class="text-xs font-semibold text-slate-800 leading-snug cursor-pointer" onclick="viewProductDetailsSim('${prod.id}')">${prod.name}</h4>
-                  <p class="text-[10px] text-slate-400 font-mono mt-0.5">MOQ: ${prod.minOrder} ${prod.unit}s</p>
+                  <h4 class="text-[11px] font-bold text-slate-800 leading-snug cursor-pointer" onclick="viewProductDetailsSim('${prod.id}')">${prod.name}</h4>
+                  <p class="text-[9px] text-slate-400 font-mono mt-0.5">MOQ: ${prod.minOrder} • Stock: ${prod.stock}</p>
                 </div>
-                <div class="flex justify-between items-center mt-2">
-                  <span class="text-xs font-mono font-bold text-slate-800">₹${prod.price.toLocaleString('en-IN')} <span class="text-[9px] font-sans text-slate-400 font-normal">/${prod.unit}</span></span>
-                  <button class="px-3 py-1 bg-blue-900 hover:bg-blue-800 text-white rounded-md text-[10px] font-bold" onclick="addToCartSim('${prod.id}')">Add</button>
+                <div class="flex justify-between items-center mt-2.5">
+                  <span class="text-xs font-mono font-bold text-slate-800">₹${prod.price.toLocaleString('en-IN')} <span class="text-[8px] font-sans text-slate-400 font-normal">/${prod.unit}</span></span>
+                  <button class="px-3 py-1 bg-blue-900 hover:bg-blue-800 text-white rounded-md text-[9px] font-bold transition" onclick="addToCartSim('${prod.id}')">Add</button>
                 </div>
               </div>
             </div>
@@ -1032,69 +1294,46 @@ function generateCustomerListingUI() {
   `;
 }
 
-function viewProductDetailsSim(prodId) {
-  state.selectedProductId = prodId;
-  navigateCustomer('details');
-}
-
-function addToCartSim(prodId) {
-  const prod = state.products.find(p => p.id === prodId);
-  if(!prod) return;
-  
-  const existing = state.customerCart.find(i => i.productId === prodId);
-  if(existing) {
-    existing.qty += prod.minOrder;
-  } else {
-    state.customerCart.push({
-      productId: prodId,
-      name: prod.name,
-      price: prod.price,
-      qty: prod.minOrder,
-      unit: prod.unit
-    });
-  }
-
-  showToast(`Added ${prod.name} to cart.`, 'success');
-  renderCustomerApp(); // Reload to refresh cart badges
-}
-
 function generateCustomerDetailsUI() {
   const prod = state.products.find(p => p.id === state.selectedProductId);
   if(!prod) return '';
 
   return `
-    <div class="animate-fade-in flex flex-col justify-between h-full">
+    <div class="flex flex-col justify-between h-full">
       <div>
         <div class="flex items-center justify-between mb-4 mt-2">
           <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('listing')">
             <span class="material-symbols-outlined text-sm">arrow_back</span>
           </button>
-          <h2 class="text-sm font-bold text-slate-700">Product details</h2>
+          <h2 class="text-xs font-bold text-slate-700">Specification details</h2>
           <button class="relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('cart')">
             <span class="material-symbols-outlined text-lg">shopping_cart</span>
-            ${state.customerCart.length > 0 ? `<span class="absolute -top-1 -right-1 bg-rose-600 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">${state.customerCart.reduce((s,i)=>s+i.qty,0)}</span>` : ''}
           </button>
         </div>
 
-        <img class="w-full h-44 object-cover rounded-2xl mb-4 bg-slate-100" src="${prod.image}" alt="${prod.name}"/>
+        <img class="w-full h-40 object-cover rounded-xl mb-4 bg-slate-50 border border-slate-100" src="${prod.image}" alt="${prod.name}"/>
 
         <div class="flex justify-between items-start mb-2">
-          <span class="px-2 py-0.5 bg-blue-50 text-blue-900 rounded font-semibold text-[10px]">${prod.brand}</span>
-          <span class="text-[10px] font-mono text-slate-400">SKU: ${prod.sku}</span>
+          <span class="px-2 py-0.5 bg-blue-50 text-blue-900 rounded font-bold text-[9px] uppercase tracking-wider">${prod.brand}</span>
+          <span class="text-[9px] font-mono text-slate-400">SKU: ${prod.sku}</span>
         </div>
-        <h3 class="text-sm font-bold text-slate-800 leading-snug">${prod.name}</h3>
-        <p class="text-[10px] text-slate-500 mt-2 font-poppins">${prod.specs}</p>
+        <h3 class="text-xs font-bold text-slate-800 leading-snug">${prod.name}</h3>
+        
+        <div class="mt-4 border-t border-slate-100 pt-3">
+          <h4 class="text-[10px] font-bold text-slate-700 mb-1.5 uppercase">Specifications</h4>
+          <p class="text-[10px] text-slate-500 font-poppins leading-relaxed">${prod.specs}</p>
+        </div>
 
-        <div class="mt-4 border-t border-slate-100 pt-4">
-          <h4 class="text-xs font-bold text-slate-700 mb-1.5 uppercase">B2B Terms</h4>
+        <div class="mt-4 border-t border-slate-100 pt-3">
+          <h4 class="text-[10px] font-bold text-slate-700 mb-1.5 uppercase">B2B Order Options</h4>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="bg-slate-50 p-2.5 rounded-lg">
-              <span class="text-slate-400 text-[9px] block">MIN ORDER QTY</span>
-              <strong class="text-slate-700 font-mono">${prod.minOrder} ${prod.unit}s</strong>
+            <div class="bg-slate-50 p-2 rounded-lg text-center">
+              <span class="text-slate-400 text-[8px] block font-bold uppercase">MIN ORDER QTY</span>
+              <strong class="text-slate-700 font-mono text-xs">${prod.minOrder} ${prod.unit}s</strong>
             </div>
-            <div class="bg-slate-50 p-2.5 rounded-lg">
-              <span class="text-slate-400 text-[9px] block">UNIT PRICE</span>
-              <strong class="text-slate-700 font-mono">₹${prod.price.toLocaleString('en-IN')}</strong>
+            <div class="bg-slate-50 p-2 rounded-lg text-center">
+              <span class="text-slate-400 text-[8px] block font-bold uppercase">UNIT PRICE</span>
+              <strong class="text-slate-700 font-mono text-xs">₹${prod.price.toLocaleString('en-IN')}</strong>
             </div>
           </div>
         </div>
@@ -1102,10 +1341,10 @@ function generateCustomerDetailsUI() {
 
       <div class="flex items-center gap-3 mt-6 pb-4">
         <div class="flex-1">
-          <span class="text-[10px] text-slate-400 block uppercase font-bold">Total price (Est)</span>
-          <strong class="text-base font-mono text-slate-800 block mt-0.5">₹${(prod.price * prod.minOrder).toLocaleString('en-IN')}</strong>
+          <span class="text-[9px] text-slate-400 block uppercase font-bold">Total price (Est)</span>
+          <strong class="text-sm font-mono text-slate-800 block mt-0.5">₹${(prod.price * prod.minOrder).toLocaleString('en-IN')}</strong>
         </div>
-        <button class="btn-primary h-12 flex-1 text-sm font-semibold rounded-xl" onclick="addToCartSim('${prod.id}'); navigateCustomer('cart')">Book Stock</button>
+        <button class="btn-primary h-11 flex-1 text-xs font-semibold rounded-xl" onclick="addToCartSim('${prod.id}'); navigateCustomer('cart')">Book Stock</button>
       </div>
     </div>
   `;
@@ -1117,9 +1356,9 @@ function generateCustomerCartUI() {
   const total = subtotal + gst;
 
   return `
-    <div class="animate-fade-in flex flex-col justify-between h-full">
+    <div class="flex flex-col justify-between h-full">
       <div>
-        <div class="flex items-center gap-2 mb-6 mt-2">
+        <div class="flex items-center gap-2 mb-4 mt-2">
           <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('categories')">
             <span class="material-symbols-outlined text-sm">arrow_back</span>
           </button>
@@ -1132,13 +1371,13 @@ function generateCustomerCartUI() {
             <p class="text-xs text-slate-400">Cart is empty. Add bulk items from product lists.</p>
           </div>
         ` : `
-          <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-2.5">
             ${state.customerCart.map((item, idx) => {
               return `
                 <div class="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex justify-between items-center">
                   <div class="flex-1 pr-4">
-                    <h4 class="text-xs font-semibold text-slate-800 leading-tight">${item.name}</h4>
-                    <span class="text-[10px] text-slate-400 font-mono mt-1 block">₹${item.price.toLocaleString('en-IN')} / ${item.unit}</span>
+                    <h4 class="text-[11px] font-bold text-slate-800 leading-tight">${item.name}</h4>
+                    <span class="text-[9px] text-slate-400 font-mono mt-1 block">₹${item.price.toLocaleString('en-IN')} / ${item.unit}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <button class="w-6 h-6 rounded bg-slate-100 text-slate-600 font-bold text-xs" onclick="adjustCartQty(${idx}, -1)">-</button>
@@ -1149,7 +1388,7 @@ function generateCustomerCartUI() {
               `;
             }).join('')}
 
-            <div class="mt-6 border-t border-dashed border-slate-200 pt-4 text-xs flex flex-col gap-1.5 text-slate-600">
+            <div class="mt-4 border-t border-dashed border-slate-200 pt-3 text-[11px] flex flex-col gap-1.5 text-slate-600">
               <div class="flex justify-between">
                 <span>Subtotal</span>
                 <span class="font-mono">₹${subtotal.toLocaleString('en-IN')}</span>
@@ -1158,9 +1397,9 @@ function generateCustomerCartUI() {
                 <span>GST (18%)</span>
                 <span class="font-mono">₹${gst.toLocaleString('en-IN')}</span>
               </div>
-              <div class="flex justify-between text-slate-800 font-bold text-sm border-t border-slate-100 pt-2.5 mt-1.5">
+              <div class="flex justify-between text-slate-800 font-bold text-xs border-t border-slate-100 pt-2.5 mt-1">
                 <span>Total amount</span>
-                <span class="font-mono text-blue-900">₹${total.toLocaleString('en-IN')}</span>
+                <span class="font-mono text-blue-900 text-sm font-bold">₹${total.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
@@ -1169,730 +1408,166 @@ function generateCustomerCartUI() {
 
       ${state.customerCart.length > 0 ? `
         <div class="pt-6 pb-4">
-          <button class="btn-primary w-full text-sm font-semibold rounded-xl h-12" onclick="placeOrderCustomerSim()">Book Order (24 Hr Hold)</button>
+          <button class="btn-primary w-full text-xs font-semibold rounded-xl h-11" onclick="placeOrderCustomerSim()">Book Order (24 Hr Hold)</button>
         </div>
       ` : ''}
     </div>
   `;
 }
 
-function adjustCartQty(idx, change) {
-  const item = state.customerCart[idx];
-  const prod = state.products.find(p => p.name === item.name);
-  const min = prod ? prod.minOrder : 1;
-  
-  item.qty += change;
-  if(item.qty < min) {
-    state.customerCart.splice(idx, 1);
-    showToast("Item removed from booking cart.");
-  }
-  renderCustomerApp();
-}
-
-function placeOrderCustomerSim() {
-  const total = state.customerCart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 1.18;
-  
-  // Outstanding limit check
-  if(state.customerUser.outstanding + total > state.customerUser.creditLimit) {
-    showToast("Credit limit exceeded! Order blocked.", "error");
-    return;
-  }
-
-  // Create new order
-  const now = new Date();
-  const orderId = "JTCORD" + now.getFullYear().toString().slice(-2) + "05" + Math.floor(100 + Math.random() * 900);
-  const dateStr = now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ` | ${now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true })}`;
-
-  const newOrder = {
-    id: orderId,
-    customer: state.customerUser.name,
-    customerCode: state.customerUser.code,
-    date: dateStr,
-    amount: parseFloat(total.toFixed(2)),
-    status: "Confirmed",
-    paymentStatus: "Unpaid",
-    items: [...state.customerCart],
-    timeline: [
-      { title: "Order Booked", time: dateStr, desc: "B2B stock hold active for next 24 Hours." },
-      { title: "Confirmed", time: dateStr, desc: "Stock verification and credit check cleared by ERP." }
-    ],
-    reservedUntil: new Date(now.getTime() + 24*60*60*1000).toLocaleString('en-IN')
-  };
-
-  // Add invoice
-  const invNo = "INV" + Math.floor(245000 + Math.random() * 999);
-  const newInvoice = {
-    invoiceNo: invNo,
-    orderId: orderId,
-    customer: state.customerUser.name,
-    customerCode: state.customerUser.code,
-    date: now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
-    amount: parseFloat(total.toFixed(2)),
-    status: "Unpaid"
-  };
-
-  state.orders.unshift(newOrder);
-  state.invoices.unshift(newInvoice);
-  
-  // Update dealer outstanding dues
-  state.customerUser.outstanding += parseFloat(total.toFixed(2));
-  const mainDealer = state.customers.find(c => c.code === state.customerUser.code);
-  if(mainDealer) mainDealer.outstanding = state.customerUser.outstanding;
-
-  // Clear cart
-  state.customerCart = [];
-
-  // Register Sync Notification for Admin Pane
-  state.notifications.unshift({
-    title: "New B2B Order",
-    desc: `Dealer ${state.customerUser.name} booked ${newOrder.items.length} lines of stock.`,
-    time: "Just Now",
-    read: false
-  });
-
-  saveState();
-  state.selectedOrderId = orderId;
-  navigateCustomer('confirmation');
-  showToast("Order booked successfully!", "success");
-}
-
-let countdownTimer;
-function startBookingCountdown() {
-  clearInterval(countdownTimer);
-  let seconds = 24 * 60 * 60; // 24 hours in seconds
-  
-  const hourEl = document.getElementById('cd-hour');
-  const minEl = document.getElementById('cd-min');
-  const secEl = document.getElementById('cd-sec');
-
-  countdownTimer = setInterval(() => {
-    seconds--;
-    if(seconds <= 0) {
-      clearInterval(countdownTimer);
-      return;
-    }
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-
-    if(hourEl) hourEl.innerText = h.toString().padStart(2, '0');
-    if(minEl) minEl.innerText = m.toString().padStart(2, '0');
-    if(secEl) secEl.innerText = s.toString().padStart(2, '0');
-  }, 1000);
-}
-
-function generateCustomerConfirmationUI() {
-  const order = state.orders.find(o => o.id === state.selectedOrderId);
-  if(!order) return '';
-
+function generateCustomerPriceListUI() {
   return `
-    <div class="h-full flex flex-col justify-between py-6 px-4 animate-fade-in text-center">
-      <div class="flex flex-col items-center mt-6">
-        <div class="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-          <span class="material-symbols-outlined text-3xl">check_circle</span>
-        </div>
-        <h2 class="text-lg font-bold text-slate-800">Booking Confirmed!</h2>
-        <p class="text-[10px] text-slate-400 mt-1 uppercase font-semibold">Booking ID: <span class="font-mono text-slate-600">${order.id}</span></p>
-
-        <div class="mt-8 bg-slate-50 border border-slate-100 rounded-2xl p-4 w-full">
-          <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Hold Expires In</span>
-          <div class="flex justify-center gap-3 mt-2 text-slate-800">
-            <div>
-              <span class="text-xl font-mono font-bold" id="cd-hour">24</span>
-              <span class="text-[9px] text-slate-400 block uppercase">Hours</span>
-            </div>
-            <span class="text-lg font-bold mt-0.5">:</span>
-            <div>
-              <span class="text-xl font-mono font-bold" id="cd-min">00</span>
-              <span class="text-[9px] text-slate-400 block uppercase">Minutes</span>
-            </div>
-            <span class="text-lg font-bold mt-0.5">:</span>
-            <div>
-              <span class="text-xl font-mono font-bold" id="cd-sec">00</span>
-              <span class="text-[9px] text-slate-400 block uppercase">Seconds</span>
-            </div>
-          </div>
-          <p class="text-[9px] text-slate-500 mt-3 px-2">Stock reserved at Bay 3 warehouse. Invoice will be generated automatically after packing confirmation.</p>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-2 pb-4">
-        <button class="btn-primary h-12 text-sm font-semibold rounded-xl" onclick="navigateCustomer('dispatch')">Track Delivery</button>
-        <button class="btn-secondary h-12 text-sm font-semibold rounded-xl" onclick="navigateCustomer('home')">Back to Home</button>
-      </div>
-    </div>
-  `;
-}
-
-function generateCustomerInvoicesUI() {
-  const filtered = state.invoices.filter(i => i.customerCode === state.customerUser.code);
-  return `
-    <div class="animate-fade-in">
-      <div class="flex items-center gap-2 mb-6 mt-2">
-        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('home')">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2 mb-2 mt-2">
+        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('profile')">
           <span class="material-symbols-outlined text-sm">arrow_back</span>
         </button>
-        <h2 class="text-base font-bold text-slate-800">My Dues & Invoices</h2>
+        <h2 class="text-base font-bold text-slate-800">Distributor Price List</h2>
       </div>
+      
+      <p class="text-[11px] text-slate-500 leading-relaxed">Download current verified distributor pricing catalogs (PDF) directly synced from Zoho Inventory database.</p>
 
-      <div class="flex flex-col gap-2.5">
-        ${filtered.map(inv => {
-          let statusClass = inv.status === 'Paid' ? 'status-delivered' : 'status-pending';
-          
-          return `
-            <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="font-mono text-xs font-bold text-slate-800">${inv.invoiceNo}</span>
-                  <span class="text-[9px] text-slate-400 block font-mono mt-0.5">Order Ref: ${inv.orderId}</span>
-                </div>
-                <span class="status-chip ${statusClass}">${inv.status}</span>
-              </div>
-              <div class="flex justify-between items-end mt-4">
-                <div>
-                  <span class="text-[9px] text-slate-400 block uppercase">Total Amount</span>
-                  <strong class="text-sm font-mono text-slate-800">₹${inv.amount.toLocaleString('en-IN')}</strong>
-                </div>
-                <div class="flex gap-2">
-                  <button class="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-[10px] font-semibold" onclick="simulateInvoicePDF('${inv.invoiceNo}')">View</button>
-                  ${inv.status !== 'Paid' ? `<button class="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-[10px] font-semibold" onclick="payInvoiceSim('${inv.invoiceNo}')">Pay</button>` : ''}
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function payInvoiceSim(invNo) {
-  const inv = state.invoices.find(i => i.invoiceNo === invNo);
-  if(!inv) return;
-
-  // Confirm dialog
-  const check = confirm(`Authorize B2B payment of ₹${inv.amount.toLocaleString('en-IN')}?`);
-  if(!check) return;
-
-  inv.status = 'Paid';
-  
-  // Deduct outstanding
-  state.customerUser.outstanding = Math.max(0, state.customerUser.outstanding - inv.amount);
-  const mainDealer = state.customers.find(c => c.code === state.customerUser.code);
-  if(mainDealer) mainDealer.outstanding = state.customerUser.outstanding;
-
-  // Mark matching order paid
-  const order = state.orders.find(o => o.id === inv.orderId);
-  if(order) order.paymentStatus = 'Paid';
-
-  // Push to collections log
-  state.collections.unshift({
-    id: "COL" + Math.floor(100 + Math.random() * 900),
-    agent: "Self (Online Portal)",
-    customer: state.customerUser.name,
-    amount: inv.amount,
-    date: new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
-    mode: "UPI Portal",
-    reference: "UPI" + Math.floor(10000000 + Math.random() * 90000000),
-    status: "Cleared"
-  });
-
-  saveState();
-  renderCustomerApp();
-  showToast(`Payment of ₹${inv.amount.toLocaleString('en-IN')} processed successfully!`, 'success');
-}
-
-function generateCustomerDispatchUI() {
-  const order = state.orders.find(o => o.id === state.selectedOrderId);
-  if(!order) return '<p class="text-xs text-slate-400 py-8 text-center">No order active for dispatch tracking.</p>';
-
-  // Status mapping
-  const activeStep = ['Pending', 'Confirmed', 'Packed', 'Dispatched', 'Delivered'].indexOf(order.status);
-
-  return `
-    <div class="animate-fade-in">
-      <div class="flex items-center gap-2 mb-6 mt-2">
-        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('home')">
-          <span class="material-symbols-outlined text-sm">arrow_back</span>
-        </button>
-        <h2 class="text-base font-bold text-slate-800">Dispatch Timeline</h2>
-      </div>
-
-      <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm mb-5">
-        <div class="flex justify-between items-start text-xs mb-3 border-b border-slate-50 pb-3">
+      <div class="flex flex-col gap-2.5 mt-2">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
           <div>
-            <span class="text-slate-400 block font-semibold">Order Reference</span>
-            <strong class="text-slate-800 font-mono">${order.id}</strong>
+            <strong class="text-xs text-slate-800 block">Wires & Cables Price List</strong>
+            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Updated: Today, 08:30 AM</span>
           </div>
-          <div class="text-right">
-            <span class="text-slate-400 block font-semibold">Bill Amount</span>
-            <strong class="text-slate-800 font-mono">₹${order.amount.toLocaleString('en-IN')}</strong>
-          </div>
-        </div>
-        <p class="text-[10px] text-slate-500 font-semibold uppercase leading-snug">Expected Delivery: <span class="font-mono text-slate-700 font-bold">${order.expectedDelivery || '14 May 2024'}</span></p>
-      </div>
-
-      <!-- Vertical Stepper Timeline -->
-      <div class="relative pl-6 flex flex-col gap-6">
-        <div class="absolute left-2.5 top-1.5 bottom-1.5 w-[2px] bg-slate-100"></div>
-
-        <div class="relative flex gap-3 text-xs">
-          <div class="absolute -left-[20px] top-0 w-3 h-3 rounded-full border-2 ${activeStep >= 0 ? 'bg-blue-900 border-blue-900 shadow' : 'bg-white border-slate-300'} z-10"></div>
-          <div>
-            <strong class="${activeStep >= 0 ? 'text-slate-800' : 'text-slate-400'} block">Order Placed</strong>
-            <span class="text-[9px] text-slate-400 font-mono">12 May 2024, 09:30 AM</span>
-            <p class="text-[10px] text-slate-500 mt-1">Booked successfully on platform.</p>
-          </div>
-        </div>
-
-        <div class="relative flex gap-3 text-xs">
-          <div class="absolute -left-[20px] top-0 w-3 h-3 rounded-full border-2 ${activeStep >= 1 ? 'bg-blue-900 border-blue-900 shadow' : 'bg-white border-slate-300'} z-10"></div>
-          <div>
-            <strong class="${activeStep >= 1 ? 'text-slate-800' : 'text-slate-400'} block">ERP Confirmed</strong>
-            <span class="text-[9px] text-slate-400 font-mono">12 May 2024, 11:15 AM</span>
-            <p class="text-[10px] text-slate-500 mt-1">Stock verification and credit check cleared.</p>
-          </div>
-        </div>
-
-        <div class="relative flex gap-3 text-xs">
-          <div class="absolute -left-[20px] top-0 w-3 h-3 rounded-full border-2 ${activeStep >= 2 ? 'bg-blue-900 border-blue-900 shadow' : 'bg-white border-slate-300'} z-10"></div>
-          <div>
-            <strong class="${activeStep >= 2 ? 'text-slate-800' : 'text-slate-400'} block">Packed at Warehouse</strong>
-            <span class="text-[9px] text-slate-400 font-mono">Ready at Bay 4</span>
-            <p class="text-[10px] text-slate-500 mt-1">Packed, sealed and tagged with serial bar codes.</p>
-          </div>
-        </div>
-
-        <div class="relative flex gap-3 text-xs">
-          <div class="absolute -left-[20px] top-0 w-3 h-3 rounded-full border-2 ${activeStep >= 3 ? 'bg-blue-900 border-blue-900 shadow' : 'bg-white border-slate-300'} z-10"></div>
-          <div>
-            <strong class="${activeStep >= 3 ? 'text-slate-800' : 'text-slate-400'} block">Shipped (In Transit)</strong>
-            <span class="text-[9px] text-slate-400 font-mono">Truck: UP78-T-4545</span>
-            <p class="text-[10px] text-slate-500 mt-1">Dispatched to Kanpur regional hub.</p>
-          </div>
-        </div>
-
-        <div class="relative flex gap-3 text-xs">
-          <div class="absolute -left-[20px] top-0 w-3 h-3 rounded-full border-2 ${activeStep >= 4 ? 'bg-blue-900 border-blue-900 shadow' : 'bg-white border-slate-300'} z-10"></div>
-          <div>
-            <strong class="${activeStep >= 4 ? 'text-slate-800' : 'text-slate-400'} block">Delivered & Closed</strong>
-            <span class="text-[9px] text-slate-400 font-mono">Closed in ERP</span>
-            <p class="text-[10px] text-slate-500 mt-1">Acknowledged and signed by store manager.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function generateCustomerProfileUI() {
-  const cust = state.customerUser;
-  return `
-    <div class="animate-fade-in text-center">
-      <div class="flex flex-col items-center py-6 border-b border-slate-100">
-        <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center mb-3">
-          <span class="material-symbols-outlined text-3xl">account_circle</span>
-        </div>
-        <h3 class="text-sm font-bold text-slate-800">${cust.owner}</h3>
-        <p class="text-[10px] text-slate-400 font-mono mt-0.5">Code: ${cust.code}</p>
-      </div>
-
-      <div class="flex flex-col gap-1 mt-4 text-left text-xs">
-        <div class="p-3 bg-white border border-slate-50 rounded-xl mb-1.5">
-          <span class="text-[9px] text-slate-400 block">GSTIN</span>
-          <strong class="text-slate-700 font-mono uppercase">${cust.gstin}</strong>
-        </div>
-        <div class="p-3 bg-white border border-slate-50 rounded-xl mb-1.5">
-          <span class="text-[9px] text-slate-400 block">PHONE NUMBER</span>
-          <strong class="text-slate-700 font-mono">+91 ${cust.phone}</strong>
-        </div>
-        <div class="p-3 bg-white border border-slate-50 rounded-xl mb-1.5">
-          <span class="text-[9px] text-slate-400 block">REGISTERED ADDRESS</span>
-          <strong class="text-slate-700">${cust.address}</strong>
-        </div>
-      </div>
-
-      <button class="w-full mt-8 py-3 bg-slate-100 hover:bg-slate-200 text-rose-600 rounded-xl font-poppins font-medium text-xs transition-all" onclick="navigateCustomer('welcome')">Log Out Account</button>
-    </div>
-  `;
-}
-
-// ----------------------------------------------------
-// COLLECTION AGENT APP MODULE (PURPLE + BLUE)
-// ----------------------------------------------------
-function navigateAgent(screen) {
-  state.agentScreen = screen;
-  renderAgentApp();
-}
-
-function renderAgentApp() {
-  const container = document.getElementById('agent-screen-area');
-  container.innerHTML = '';
-
-  if(state.agentScreen === 'login') {
-    container.innerHTML = generateAgentLoginUI();
-  } else if (state.agentScreen === 'home') {
-    container.innerHTML = generateAgentHomeUI();
-  } else if (state.agentScreen === 'collection_form') {
-    container.innerHTML = generateAgentCollectionFormUI();
-  } else if (state.agentScreen === 'success') {
-    container.innerHTML = generateAgentSuccessUI();
-  } else if (state.agentScreen === 'leaderboard') {
-    container.innerHTML = generateAgentLeaderboardUI();
-  } else if (state.agentScreen === 'history') {
-    container.innerHTML = generateAgentHistoryUI();
-  }
-
-  // Render bottom nav if not login
-  const isNav = state.agentScreen !== 'login';
-  const bottomNav = document.getElementById('agent-bottom-nav');
-  if(bottomNav) {
-    bottomNav.style.display = isNav ? 'flex' : 'none';
-    if(isNav) updateAgentBottomNavHighlight();
-  }
-}
-
-function updateAgentBottomNavHighlight() {
-  const tabs = document.querySelectorAll('.agent-nav-btn');
-  tabs.forEach(tab => {
-    const screen = tab.dataset.screen;
-    const isActive = (screen === 'home' && ['home', 'collection_form', 'success'].includes(state.agentScreen)) ||
-                     (screen === 'leaderboard' && state.agentScreen === 'leaderboard') ||
-                     (screen === 'history' && state.agentScreen === 'history');
-    if(isActive) {
-      tab.classList.add('text-indigo-900', 'font-semibold');
-      tab.classList.remove('text-slate-400');
-    } else {
-      tab.classList.remove('text-indigo-900', 'font-semibold');
-      tab.classList.add('text-slate-400');
-    }
-  });
-}
-
-// UI Creators
-function generateAgentLoginUI() {
-  return `
-    <div class="h-full flex flex-col justify-between py-10 px-6 animate-fade-in">
-      <div class="mt-4 flex flex-col items-center text-center">
-        <div class="w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-900 to-indigo-600 flex items-center justify-center mb-4 shadow-lg">
-          <span class="material-symbols-outlined text-white text-3xl">route</span>
-        </div>
-        <h1 class="text-2xl font-bold text-slate-800">Agent Portal</h1>
-        <p class="text-xs text-slate-400 mt-1">Field Collections & Ledger Sync</p>
-      </div>
-
-      <div class="flex flex-col gap-4">
-        <div>
-          <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Agent Phone</label>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">badge</span>
-            <input type="text" class="jtc-input pl-12" id="agent-phone-input" placeholder="+91 98768 43210" value="9876843210"/>
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">PIN</label>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
-            <input type="password" class="jtc-input pl-12" id="agent-pwd-input" placeholder="••••" value="1111"/>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-3">
-        <button class="btn-primary bg-indigo-900 hover:bg-indigo-800 shadow-indigo-200" onclick="loginAgentSim()">Login Portal</button>
-        <p class="text-center text-xs text-slate-400">Field agent credentials required.</p>
-      </div>
-    </div>
-  `;
-}
-
-function loginAgentSim() {
-  const phone = document.getElementById('agent-phone-input').value;
-  const match = state.agents.find(a => a.phone === phone);
-  if(match) {
-    state.agentUser = match;
-    showToast(`Welcome field agent ${match.name}`, 'success');
-    navigateAgent('home');
-  } else {
-    showToast("Invalid credentials", "error");
-  }
-}
-
-function generateAgentHomeUI() {
-  const agt = state.agentUser;
-  const targetCompleted = Math.round((agt.collected / agt.target) * 100);
-
-  return `
-    <div class="animate-fade-in flex flex-col gap-5">
-      <!-- Agent Header -->
-      <div class="flex justify-between items-center bg-indigo-950 -mx-4 px-4 py-4 pt-10 text-white rounded-b-3xl shadow-md">
-        <div class="flex items-center gap-3">
-          <img class="w-9 h-9 rounded-full object-cover border border-white/20" src="${agt.avatarUrl}"/>
-          <div>
-            <div class="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Field Operations</div>
-            <div class="text-xs font-semibold font-poppins">${agt.name}</div>
-          </div>
-        </div>
-        <button class="relative w-8 h-8 rounded-full bg-white/10 flex items-center justify-center" onclick="navigateAgent('login')">
-          <span class="material-symbols-outlined text-lg">logout</span>
-        </button>
-      </div>
-
-      <!-- KPI Progress Grid -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
-          <span class="text-[10px] text-slate-400 block uppercase font-bold">Target Complete</span>
-          <span class="text-xl font-bold text-indigo-900 block mt-1">${targetCompleted}%</span>
-          <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-3">
-            <div class="bg-indigo-600 h-full rounded-full" style="width: ${Math.min(targetCompleted, 100)}%"></div>
-          </div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm text-center">
-          <span class="text-[10px] text-slate-400 block uppercase font-bold">Collected Today</span>
-          <span class="text-xl font-bold font-mono text-emerald-600 block mt-1">₹${agt.collected.toLocaleString('en-IN')}</span>
-          <span class="text-[9px] text-slate-400 block mt-1">Target: ₹${agt.target.toLocaleString('en-IN')}</span>
-        </div>
-      </div>
-
-      <!-- GPS Map simulation placeholder -->
-      <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-        <div class="p-3 bg-slate-50 flex justify-between items-center border-b border-slate-100">
-          <span class="text-xs font-bold text-slate-700 uppercase">Target Route Map</span>
-          <span class="text-[10px] text-indigo-700 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-xs">my_location</span> GPS Live</span>
-        </div>
-        <div class="h-32 bg-slate-100 relative flex items-center justify-center">
-          <img class="absolute inset-0 w-full h-full object-cover opacity-60" src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=300&auto=format&fit=crop&q=60" alt="Simulation map grid"/>
-          <div class="relative z-10 px-4 py-2 bg-indigo-900 text-white rounded-lg text-[10px] flex items-center gap-2 shadow-lg">
-            <span class="material-symbols-outlined text-sm animate-ping">radio_button_checked</span>
-            <span>2 Dealers on route today</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Today's Visits / Firms list -->
-      <div>
-        <h3 class="text-xs font-bold text-slate-700 uppercase mb-2">Today's Visits</h3>
-        <div class="flex flex-col gap-2.5">
-          ${agt.todayFirms.map((firm, idx) => {
-            let isCollected = firm.status === 'Collected';
-            return `
-              <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
-                <div>
-                  <h4 class="text-xs font-semibold text-slate-800 leading-tight">${firm.name}</h4>
-                  <span class="text-[9px] text-slate-400 mt-1 block">${firm.address}</span>
-                  <span class="text-[10px] font-mono font-bold mt-2 block text-slate-700">Dues: ₹${firm.due.toLocaleString('en-IN')}</span>
-                </div>
-                <div>
-                  ${isCollected ? `
-                    <span class="text-emerald-600 font-semibold text-xs flex items-center gap-1"><span class="material-symbols-outlined text-sm">verified</span> Collected</span>
-                  ` : `
-                    <button class="px-3.5 py-1.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-lg text-[10px] font-semibold" onclick="collectForFirmSim(${idx})">Collect</button>
-                  `}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function collectForFirmSim(idx) {
-  const firm = state.agentUser.todayFirms[idx];
-  state.activeCollectionFirm = { ...firm, todayFirmIndex: idx };
-  navigateAgent('collection_form');
-}
-
-function generateAgentCollectionFormUI() {
-  const firm = state.activeCollectionFirm;
-  return `
-    <div class="h-full flex flex-col justify-between py-6 px-4 animate-fade-in">
-      <div>
-        <div class="flex items-center gap-2 mb-6">
-          <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateAgent('home')">
-            <span class="material-symbols-outlined text-sm">arrow_back</span>
+          <button class="w-8 h-8 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center hover:bg-blue-100 transition" onclick="showToast('Price catalog PDF download started!', 'success')">
+            <span class="material-symbols-outlined text-sm">download</span>
           </button>
-          <h2 class="text-sm font-bold text-slate-800">Record Ledger Collection</h2>
         </div>
 
-        <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 mb-6">
-          <span class="text-[10px] text-indigo-800 block uppercase font-bold">DEALER FIRM</span>
-          <strong class="text-sm text-indigo-950 block mt-0.5">${firm.name}</strong>
-          <span class="text-[10px] font-mono text-indigo-700 block mt-2">Maximum Dues Outstanding: ₹${firm.due.toLocaleString('en-IN')}</span>
+        <div class="bg-white p-3.5 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
+          <div>
+            <strong class="text-xs text-slate-800 block">Crompton Fans Catalog</strong>
+            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Updated: 10 May 2024</span>
+          </div>
+          <button class="w-8 h-8 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center hover:bg-blue-100 transition" onclick="showToast('Catalog download started!', 'success')">
+            <span class="material-symbols-outlined text-sm">download</span>
+          </button>
         </div>
 
-        <div class="flex flex-col gap-4">
+        <div class="bg-white p-3.5 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
           <div>
-            <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Collected Amount (₹)</label>
-            <input type="number" class="jtc-input font-mono" id="collection-amt-input" placeholder="Enter amount collected" value="${firm.due}"/>
+            <strong class="text-xs text-slate-800 block">Kirloskar Pumps Pricing</strong>
+            <span class="text-[9px] text-slate-400 font-mono block mt-0.5">Updated: 01 May 2024</span>
           </div>
-          <div>
-            <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Payment Mode</label>
-            <select class="jtc-input" id="collection-mode-input">
-              <option value="Cheque">Bank Cheque</option>
-              <option value="UPI">UPI Digital Transfer</option>
-              <option value="Cash">Cash Ledger</option>
-              <option value="Bank Transfer">RTGS/NEFT Transfer</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-bold text-slate-600 block mb-2 uppercase">Instrument Reference # (Txn ID/Cheque No)</label>
-            <input type="text" class="jtc-input font-mono" id="collection-ref-input" placeholder="CHQ / UPI Ref / Cash details" value="CHQ${Math.floor(100000 + Math.random() * 900000)}"/>
-          </div>
+          <button class="w-8 h-8 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center hover:bg-blue-100 transition" onclick="showToast('Catalog download started!', 'success')">
+            <span class="material-symbols-outlined text-sm">download</span>
+          </button>
         </div>
-      </div>
-
-      <div class="pb-4">
-        <button class="btn-primary bg-indigo-900 hover:bg-indigo-800 w-full rounded-xl text-sm font-semibold h-12" onclick="saveCollectionSim()">Confirm Ledger Entry</button>
       </div>
     </div>
   `;
 }
 
-function saveCollectionSim() {
-  const amt = parseFloat(document.getElementById('collection-amt-input').value);
-  const mode = document.getElementById('collection-mode-input').value;
-  const ref = document.getElementById('collection-ref-input').value;
-  
-  const firm = state.activeCollectionFirm;
-  if(isNaN(amt) || amt <= 0) {
-    showToast("Enter a valid positive collected amount", "error");
+function generateCustomerSupportUI() {
+  return `
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2 mb-2 mt-2">
+        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('profile')">
+          <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </button>
+        <h2 class="text-base font-bold text-slate-800">Support Desk</h2>
+      </div>
+      
+      <p class="text-[11px] text-slate-500 leading-relaxed">Submit a ticket regarding stock delivery, ledger disputes, or sync errors directly to accounts.</p>
+
+      <div class="flex flex-col gap-3.5 mt-2">
+        <div>
+          <label class="text-[9px] font-bold text-slate-600 block mb-1 uppercase">Ticket Category</label>
+          <select class="jtc-input h-11 text-xs" id="support-category">
+            <option>Dispatch / Delivery delay</option>
+            <option>Ledger Reconcile Dispute</option>
+            <option>Product Defect / Return</option>
+            <option>Credit Limit Upgrade</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[9px] font-bold text-slate-600 block mb-1 uppercase">Order Reference (Optional)</label>
+          <input type="text" class="jtc-input h-11 text-xs font-mono" id="support-ref" placeholder="e.g. JTCORD2405132"/>
+        </div>
+        <div>
+          <label class="text-[9px] font-bold text-slate-600 block mb-1 uppercase">Message / Issue Details</label>
+          <textarea class="jtc-input p-3 text-xs min-h-[80px]" id="support-msg" placeholder="Describe your issue..."></textarea>
+        </div>
+        
+        <button class="btn-primary h-11 text-xs font-semibold rounded-xl mt-2" onclick="submitTicketSim()">Submit Ticket</button>
+      </div>
+    </div>
+  `;
+}
+
+function submitTicketSim() {
+  const cat = document.getElementById('support-category').value;
+  const msg = document.getElementById('support-msg').value;
+
+  if(!msg) {
+    showToast("Please provide details for the ticket", "error");
     return;
   }
 
-  // Record Collection Transaction
-  const colId = "COL" + Math.floor(100 + Math.random() * 900);
-  const colTxn = {
-    id: colId,
-    agent: state.agentUser.name,
-    customer: firm.name,
-    amount: amt,
-    date: new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
-    mode: mode,
-    reference: ref,
-    status: "Pending Verification" // Admin needs to verify
-  };
-
-  state.collections.unshift(colTxn);
-  
-  // Set today visit state to collected
-  const targetFirmIdx = state.activeCollectionFirm.todayFirmIndex;
-  state.agentUser.todayFirms[targetFirmIdx].status = 'Collected';
-  state.agentUser.todayFirms[targetFirmIdx].amount = amt;
-  state.agentUser.todayFirms[targetFirmIdx].date = colTxn.date;
-
-  // Add notification to admin
-  state.notifications.unshift({
-    title: "Collection Recorded",
-    desc: `${state.agentUser.name} submitted receipt ${colId} for verification.`,
-    time: "Just Now",
-    read: false
-  });
-
-  saveState();
-  navigateAgent('success');
-  showToast("Ledger collection registered. Awaiting admin clearing.", "success");
+  showToast(`Ticket logged under: ${cat}. Accounts team will contact you.`, "success");
+  navigateCustomer('home');
 }
 
-function generateAgentSuccessUI() {
+function generateCustomerSchemesUI() {
   return `
-    <div class="h-full flex flex-col justify-between py-10 px-4 animate-fade-in text-center">
-      <div class="flex flex-col items-center mt-12">
-        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5 shadow-inner">
-          <span class="material-symbols-outlined text-4xl">check_circle</span>
-        </div>
-        <h2 class="text-xl font-bold text-slate-800">Receipt Generated!</h2>
-        <p class="text-xs text-slate-400 mt-2">B2B collection recorded successfully</p>
-        
-        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 w-full mt-8">
-          <div class="text-xs text-slate-400 uppercase tracking-widest font-bold">DIGITAL RECEIPT DETAILS</div>
-          <div class="border-t border-dashed border-slate-200 my-3"></div>
-          <div class="flex flex-col gap-2.5 text-xs text-left">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Firm Name</span>
-              <strong class="text-slate-800">${state.activeCollectionFirm.name}</strong>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">Collected Amount</span>
-              <strong class="text-slate-800 font-mono">₹${state.activeCollectionFirm.due.toLocaleString('en-IN')}</strong>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">ERP Sync State</span>
-              <span class="text-amber-600 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-xs animate-spin">sync</span> Pending verification</span>
-            </div>
-          </div>
-        </div>
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2 mb-2 mt-2">
+        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('home')">
+          <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </button>
+        <h2 class="text-base font-bold text-slate-800">B2B Schemes & Offers</h2>
       </div>
 
-      <div class="pb-4">
-        <button class="btn-primary bg-indigo-900 hover:bg-indigo-800 w-full rounded-xl h-12 text-sm font-semibold shadow-indigo-200" onclick="navigateAgent('home')">Back to route</button>
+      <p class="text-[11px] text-slate-500 leading-relaxed">Book orders matching below schemes to receive cashbacks, credit offsets, or bulk discounts.</p>
+
+      <div class="flex flex-col gap-3 mt-2">
+        <div class="bg-gradient-to-r from-orange-550 from-amber-500 to-amber-600 p-4 rounded-2xl text-white shadow-sm relative overflow-hidden">
+          <span class="px-2 py-0.5 bg-white/20 rounded text-[9px] uppercase font-bold tracking-wider">Mega Saver Offer</span>
+          <strong class="text-sm block mt-2 font-poppins">Upto 15% Off Wires & Cables</strong>
+          <p class="text-[9px] text-amber-100 mt-1 leading-relaxed">Order above 25 rolls of Polycab/KEI wires to trigger automatic credit rebate on invoicing.</p>
+          <span class="text-[8px] text-amber-200 block font-mono mt-3 uppercase font-semibold">Valid till: 31 May 2024</span>
+        </div>
+
+        <div class="bg-gradient-to-r from-indigo-900 to-indigo-700 p-4 rounded-2xl text-white shadow-sm relative overflow-hidden">
+          <span class="px-2 py-0.5 bg-white/20 rounded text-[9px] uppercase font-bold tracking-wider">Crompton Pump Festival</span>
+          <strong class="text-sm block mt-2 font-poppins">Flat 10% Off Monoblocks</strong>
+          <p class="text-[9px] text-indigo-150 text-indigo-200 mt-1 leading-relaxed">Buy 5 or more Kirloskar/Crompton pumps and get immediate accounts ledger credit notes.</p>
+          <span class="text-[8px] text-indigo-300 block font-mono mt-3 uppercase font-semibold">Valid till: 20 May 2024</span>
+        </div>
       </div>
     </div>
   `;
 }
 
-function generateAgentLeaderboardUI() {
-  const sorted = [...state.agents].sort((a,b) => b.collected - a.collected);
+function generateCustomerHelpFAQUI() {
   return `
-    <div class="animate-fade-in">
-      <h2 class="text-base font-bold text-slate-800 mb-5 mt-2">Agent Performance</h2>
-
-      <div class="flex flex-col gap-2.5">
-        ${sorted.map((agt, idx) => {
-          let badge = `<span class="font-mono font-bold text-slate-400 text-xs w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">${idx+1}</span>`;
-          if(idx === 0) badge = `<span class="material-symbols-outlined text-amber-500 text-lg">workspace_premium</span>`;
-          if(idx === 1) badge = `<span class="material-symbols-outlined text-slate-400 text-lg">workspace_premium</span>`;
-          if(idx === 2) badge = `<span class="material-symbols-outlined text-amber-700 text-lg">workspace_premium</span>`;
-
-          return `
-            <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3">
-              ${badge}
-              <img class="w-8 h-8 rounded-full object-cover" src="${agt.avatarUrl}"/>
-              <div class="flex-1">
-                <div class="flex justify-between items-center">
-                  <h4 class="text-xs font-semibold text-slate-800">${agt.name}</h4>
-                  <span class="text-xs font-mono font-bold text-emerald-600">₹${agt.collected.toLocaleString('en-IN')}</span>
-                </div>
-                <div class="text-[9px] text-slate-400 mt-0.5">${agt.area} • Target: ₹${agt.target.toLocaleString('en-IN')}</div>
-              </div>
-            </div>
-          `;
-        }).join('')}
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2 mb-2 mt-2">
+        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700" onclick="navigateCustomer('profile')">
+          <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </button>
+        <h2 class="text-base font-bold text-slate-800">Frequently Asked Questions</h2>
       </div>
-    </div>
-  `;
-}
 
-function generateAgentHistoryUI() {
-  const agt = state.agentUser;
-  // Get collections corresponding to this agent
-  const col = state.collections.filter(c => c.agent === agt.name);
-  return `
-    <div class="animate-fade-in">
-      <h2 class="text-base font-bold text-slate-800 mb-5 mt-2">Collections History</h2>
+      <div class="flex flex-col gap-2.5 mt-2">
+        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+          <strong class="text-[11px] text-slate-800 block">How can I place an order?</strong>
+          <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">Search items, select quantities matching MOQs, add to cart, and book. Stock is reserved at warehouse.</p>
+        </div>
 
-      <div class="flex flex-col gap-2.5">
-        ${col.length === 0 ? `
-          <p class="text-xs text-slate-400 text-center py-12">No collections logged yet.</p>
-        ` : col.map(c => {
-          let statusClass = c.status === 'Cleared' ? 'status-delivered' : 'status-pending';
-          return `
-            <div class="bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h4 class="text-xs font-semibold text-slate-800 leading-tight">${c.customer}</h4>
-                  <span class="text-[9px] text-slate-400 font-mono mt-0.5">${c.date}</span>
-                </div>
-                <span class="status-chip ${statusClass}">${c.status}</span>
-              </div>
-              <div class="flex justify-between items-end mt-4 border-t border-slate-50 pt-2.5">
-                <div class="text-[10px] text-slate-500 font-poppins">Mode: <span class="font-bold">${c.mode}</span></div>
-                <strong class="text-sm font-mono text-slate-700">₹${c.amount.toLocaleString('en-IN')}</strong>
-              </div>
-            </div>
-          `;
-        }).join('')}
+        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+          <strong class="text-[11px] text-slate-800 block">How long is the stock reserved?</strong>
+          <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">B2B reservations remain active for 24 Hours. After that, unpaid pending allocations are automatically released.</p>
+        </div>
+
+        <div class="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+          <strong class="text-[11px] text-slate-800 block">When does ledger reconcile?</strong>
+          <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">Online transactions reconcile instantly. Cash/cheque collections sync once verified by admin accounts.</p>
+        </div>
       </div>
     </div>
   `;
@@ -1919,6 +1594,13 @@ window.navigateAgent = navigateAgent;
 window.loginAgentSim = loginAgentSim;
 window.collectForFirmSim = collectForFirmSim;
 window.saveCollectionSim = saveCollectionSim;
+window.openAddModal = openAddModal;
+window.closeAddModal = closeAddModal;
+window.saveNewCustomer = saveNewCustomer;
+window.saveNewProduct = saveNewProduct;
+window.saveNewAgent = saveNewAgent;
+window.saveNewAdminUser = saveNewAdminUser;
+window.submitTicketSim = submitTicketSim;
 
 // Load App on Window Load
 window.addEventListener('DOMContentLoaded', initApp);
